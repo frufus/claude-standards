@@ -414,6 +414,21 @@ outside=$(mktemp -d)
 os_context "$outside"
 check "no root outside an OpenSpec project" "$OS_ROOT" ""
 check "no changes outside an OpenSpec project" "$OS_CHANGES" "0"
+
+# `read` treats a tab as IFS whitespace regardless of what IFS is set
+# to, so without pipefail — the bash default — a leading empty field
+# used to be dropped and "0" shifted into OS_ROOT instead of
+# OS_CHANGES. Exercise that path by turning pipefail off, then
+# restoring it — not via a subshell, because `check`'s pass/fail
+# counters are plain globals and a subshell's updates to them would
+# never reach this script, letting a failing regression here pass
+# `tests/run-tests.sh` silently.
+pipefail_state=$(shopt -po pipefail)
+set +o pipefail
+os_context "$outside"
+check "OS_ROOT stays empty without pipefail" "$OS_ROOT" ""
+eval "$pipefail_state"
+
 rmdir "$outside"
 
 # A directory that does not exist at all.
@@ -455,7 +470,23 @@ os_context() { # directory -> sets OS_ROOT, OS_CHANGES
     line=$( (cd "$1" && openspec list --json 2>/dev/null) \
             | node "$lib" root.path changes.length 2>/dev/null ) || return 0
 
-    IFS=$'\t' read -r OS_ROOT OS_CHANGES <<< "$line"
+    # `read` always treats a tab as IFS whitespace no matter what IFS is
+    # set to, so a leading empty field (no OpenSpec root) gets silently
+    # collapsed and the change count shifts into OS_ROOT instead. Split
+    # on the literal tab with parameter expansion, which does not.
+    case "$line" in
+        *$'\t'*)
+            OS_ROOT="${line%%$'\t'*}"
+            OS_CHANGES="${line#*$'\t'}"
+            ;;
+        *)
+            # Defensive: json-fields.js always emits a tab-joined line,
+            # so a line with none is malformed output, not a real
+            # single-field result — treat it as no usable data at all.
+            OS_ROOT=""
+            OS_CHANGES=""
+            ;;
+    esac
     [ -n "$OS_CHANGES" ] || OS_CHANGES=0
     return 0
 }
@@ -464,7 +495,7 @@ os_context() { # directory -> sets OS_ROOT, OS_CHANGES
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `bash tests/run-tests.sh`
-Expected: `31 checks, 0 failed`
+Expected: `32 checks, 0 failed`
 
 - [ ] **Step 5: Commit**
 
