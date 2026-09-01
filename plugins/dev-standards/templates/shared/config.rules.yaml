@@ -1,0 +1,24 @@
+rules:
+  proposal:
+    - Include a "Non-Goals" subsection under "What Changes" naming what this change deliberately does not do.
+    - State the user-visible outcome. A change whose outcome is only internal says so explicitly and justifies itself.
+  specs:
+    - Write requirements as observable behaviour, checkable by someone who cannot read the code.
+    - Include at least one scenario for the unhappy path - no data, bad data, or a failure of something external.
+    - Data crossing a process boundary is parsed into a known shape before anything else touches it. Say which shape.
+  design:
+    - Name the alternatives that were rejected and why, not only the chosen approach.
+    - Call out anything that depends on third-party behaviour or data quality as an explicit risk.
+  tasks:
+    - Every task states how it is verified - a test name, a command, or an observable check.
+    - Group tasks so that pure logic is testable before any UI or I/O task starts.
+
+operations:
+  apply:
+    guidance:
+      - Run the touched area's tests before the full suite.
+      - A deviation from the spec is named and justified before it is built, never discovered afterwards in the diff.
+  archive:
+    guidance:
+      - Keep the completion summary to what changed in observable behaviour.
+      - Note any spec requirement this change made obsolete.
