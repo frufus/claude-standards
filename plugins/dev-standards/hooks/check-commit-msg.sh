@@ -6,7 +6,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 input=$(cat)
-command_line=$(printf '%s' "$input" | node "$HERE/lib/json-fields.js" tool_input.command 2>/dev/null)
+command_line=$(printf '%s' "$input" | node "$HERE/lib/json-fields.js" --raw tool_input.command 2>/dev/null)
 
 # git-subject.js tokenises the command properly (quotes, escapes, command
 # separators) so it only recognises a real `git commit` invocation and

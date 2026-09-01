@@ -145,8 +145,12 @@ function findCommitSubject(tokens) {
       argWords.push(tokens[j].value);
       j++;
     }
-    const subject = extractMessage(argWords);
-    if (subject !== null) return subject;
+    const message = extractMessage(argWords);
+    // Git's subject is the first line of the message; everything after the
+    // blank line is the body. Returning the whole message reported a
+    // well-formed commit - a short subject with a long body in one -m - as a
+    // subject of a hundred and fifty characters.
+    if (message !== null) return message.split(String.fromCharCode(10), 1)[0].replace(new RegExp(String.fromCharCode(13) + "$"), "");
     // This invocation had no visible message (e.g. `-F -`); keep
     // scanning in case a later command in the same line is a commit
     // with one.
