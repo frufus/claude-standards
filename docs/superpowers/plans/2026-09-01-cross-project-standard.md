@@ -414,6 +414,21 @@ outside=$(mktemp -d)
 os_context "$outside"
 check "no root outside an OpenSpec project" "$OS_ROOT" ""
 check "no changes outside an OpenSpec project" "$OS_CHANGES" "0"
+
+# `read` treats a tab as IFS whitespace regardless of what IFS is set
+# to, so without pipefail — the bash default — a leading empty field
+# used to be dropped and "0" shifted into OS_ROOT instead of
+# OS_CHANGES. Exercise that path by turning pipefail off, then
+# restoring it — not via a subshell, because `check`'s pass/fail
+# counters are plain globals and a subshell's updates to them would
+# never reach this script, letting a failing regression here pass
+# `tests/run-tests.sh` silently.
+pipefail_state=$(shopt -po pipefail)
+set +o pipefail
+os_context "$outside"
+check "OS_ROOT stays empty without pipefail" "$OS_ROOT" ""
+eval "$pipefail_state"
+
 rmdir "$outside"
 
 # A directory that does not exist at all.
@@ -455,7 +470,23 @@ os_context() { # directory -> sets OS_ROOT, OS_CHANGES
     line=$( (cd "$1" && openspec list --json 2>/dev/null) \
             | node "$lib" root.path changes.length 2>/dev/null ) || return 0
 
-    IFS=$'\t' read -r OS_ROOT OS_CHANGES <<< "$line"
+    # `read` always treats a tab as IFS whitespace no matter what IFS is
+    # set to, so a leading empty field (no OpenSpec root) gets silently
+    # collapsed and the change count shifts into OS_ROOT instead. Split
+    # on the literal tab with parameter expansion, which does not.
+    case "$line" in
+        *$'\t'*)
+            OS_ROOT="${line%%$'\t'*}"
+            OS_CHANGES="${line#*$'\t'}"
+            ;;
+        *)
+            # Defensive: json-fields.js always emits a tab-joined line,
+            # so a line with none is malformed output, not a real
+            # single-field result — treat it as no usable data at all.
+            OS_ROOT=""
+            OS_CHANGES=""
+            ;;
+    esac
     [ -n "$OS_CHANGES" ] || OS_CHANGES=0
     return 0
 }
@@ -464,7 +495,7 @@ os_context() { # directory -> sets OS_ROOT, OS_CHANGES
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `bash tests/run-tests.sh`
-Expected: `31 checks, 0 failed`
+Expected: `32 checks, 0 failed`
 
 - [ ] **Step 5: Commit**
 
@@ -763,14 +794,21 @@ git commit -m "feat: remind when source is edited without an active change"
 
 **Files:**
 - Create: `plugins/dev-standards/hooks/check-commit-msg.sh`
+- Create: `plugins/dev-standards/hooks/lib/git-subject.js`
 - Modify: `plugins/dev-standards/hooks/hooks.json`
 - Test: `tests/test-commit-msg.sh`
+- Test: `tests/test-git-subject.sh`
 
 **Interfaces:**
-- Consumes: `json-fields.js` from Task 2.
-- Produces: a `PreToolUse` hook matching `Bash`. It inspects `tool_input.command`, ignores everything that is not a `git commit`, and reports when the subject line is not a Conventional Commit or exceeds 72 characters.
+- Consumes: `json-fields.js` from Task 2. `check-commit-msg.sh` also consumes `git-subject.js`, which does the actual tokenising and subject extraction.
+- Produces: a `PreToolUse` hook matching `Bash`. It inspects `tool_input.command`, ignores everything that is not a real `git commit` invocation at a command position, and reports when the subject line is not a Conventional Commit or exceeds 72 characters.
 
-**Known limitation, stated deliberately:** a message passed via `-F -` or `--file` arrives on the command's stdin, not in the command string, so the hook cannot see it and stays silent. Only `-m` messages are checked. Making this a denial would therefore punish exactly the callers that use the more robust invocation.
+**Why a real tokeniser instead of a substring match / sed extraction:** an initial version matched `*"git commit"*` as a substring and pulled the subject with `sed -n 's/.*-m[[:space:]]*"\([^"]*\)".*/\1/p'`. Review found this misfired in four ways: the greedy `.*` before `-m` grabbed the *last* `-m`, so the ordinary `-m subject -m body` idiom got graded on its body text; a command that merely *mentions* `git commit` in a quoted argument (e.g. `echo 'git commit -m "x"'`) matched the substring check and produced a false warning; `[^"]*` stopped at the first raw quote, so an escaped inner quote silently truncated the subject and could hide a too-long message; and `-am`/`-sm`/combined short flags don't contain the substring `-m`, so they were never checked at all. Because this hook never denies, a false positive (warning on valid work) is worse than a false negative (missing one badly-worded commit) — it teaches the user to switch the hook off. `git-subject.js` replaces the substring/sed approach with a small shell-like tokeniser (respecting single quotes, double quotes, and backslash escapes) that only recognises `git` immediately followed by `commit` at a command position (string start, or after `&&`, `||`, `;`, `|`), and returns the *first* message value from `-m`, `-m=`, `--message`, `--message=`, or a combined short-flag cluster ending in `m` (`-am`, `-sm`, `-asm`, …) whose value is the next token.
+
+**Known limitations, stated deliberately:**
+- A message passed via `-F -` or `--file` arrives on the command's stdin, not in the command string, so the hook cannot see it and stays silent. Making this a denial would punish exactly the callers that use the more robust invocation.
+- `git-subject.js` only recognises a bare `git commit` at a command position. A wrapped invocation — `sudo git commit -m ...`, `env FOO=bar git commit -m ...`, `time git commit -m ...` — has `git` preceded by another word token, not by a command boundary, so it is not recognised and the hook stays silent. This is a residual false negative, accepted deliberately under the same false-positive-first principle: teaching the tokeniser every possible wrapper would add real complexity for invocations that are rare next to plain `git commit`.
+- An attached-without-`=` short form (`-mFoo`) is not recognised, only `-m VALUE`, `-m=VALUE`, `--message VALUE`, `--message=VALUE`, and a combined cluster taking the *next* token. This matches the literal set of forms this task specified; the gap degrades to silence, not to a false warning.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -807,14 +845,107 @@ not_contains "never denies" \
 
 printf 'not json' | bash "$HOOK" >/dev/null 2>&1
 check "exits 0 on malformed input" "$?" "0"
+
+# --- Round-1-review regressions: the subject-extraction rewrite ---
+
+# A `-m subject -m body` is the ordinary subject-plus-body idiom. The
+# FIRST -m is the subject; grading the second -m as the subject punished
+# perfectly normal commits.
+check "a subject-plus-body commit judges the first -m and stays silent" \
+  "$(msg_out '"git commit -m \"feat: x\" -m \"body text\""')" ""
+
+# `-am` is one of the most common commit invocations and must be checked,
+# both when it is well-formed and when it is not.
+check "a well-formed -am subject stays silent" \
+  "$(msg_out '"git commit -am \"feat: x\""')" ""
+contains "a badly-formed -am subject is reported" \
+  "$(msg_out '"git commit -am \"added the thing\""')" "Conventional Commits"
+
+# `git commit` appearing only as plain text inside another command's
+# argument is not a commit at all and must never trigger a warning.
+check "git commit as plain text inside another command stays silent" \
+  "$(msg_out "\"echo 'git commit -m \\\"added the thing\\\"'\"")" ""
+
+# An apostrophe in the message must not confuse the tokeniser into
+# reporting a false unconventional-subject warning.
+check "an apostrophe in a conventional subject stays silent" \
+  "$(msg_out "\"git commit -m \\\"feat: don't break this\\\"\"")" ""
+
+# An escaped inner quote must not truncate the captured subject: a subject
+# that is long BECAUSE of what follows the escaped quote must still be
+# measured in full and reported over the limit.
+escq='"git commit -m \"feat: subject with an escaped \\\" quote inside it that keeps going past seventeen characters total\""'
+contains "a subject with an escaped inner quote is measured in full and reported over the limit" \
+  "$(msg_out "$escq")" "72"
+
+# A real commit after a command separator is still a commit that must be
+# checked, even though it is not the first command on the line.
+contains "a commit after && is still checked" \
+  "$(msg_out '"cd /tmp && git commit -m \"added thing\""')" "Conventional Commits"
+```
+
+Create `tests/test-git-subject.sh`, exercising the tokeniser directly (raw command text on stdin, no JSON wrapper):
+
+```bash
+GS="plugins/dev-standards/hooks/lib/git-subject.js"
+
+subj() { printf '%s' "$1" | node "$GS" 2>/dev/null; }
+
+check "the first -m wins over a later -m (subject-plus-body idiom)" \
+  "$(subj 'git commit -m "feat: x" -m "body text"')" "feat: x"
+
+check "combined -am takes the next token as the message" \
+  "$(subj 'git commit -am "feat: x"')" "feat: x"
+
+check "combined -asm takes the next token as the message" \
+  "$(subj 'git commit -asm "feat: z"')" "feat: z"
+
+check "git commit appearing only as plain text inside another command is not a commit" \
+  "$(subj "echo 'git commit -m \"added the thing\"'")" ""
+
+check "an apostrophe inside a double-quoted message survives" \
+  "$(subj "git commit -m \"feat: don't break this\"")" "feat: don't break this"
+
+check "an escaped inner quote does not truncate the subject" \
+  "$(subj 'git commit -m "feat: subject with an escaped \" quote inside it that keeps going past seventeen characters total"')" \
+  'feat: subject with an escaped " quote inside it that keeps going past seventeen characters total'
+
+check "a real commit after && is still a commit" \
+  "$(subj 'cd /tmp && git commit -m "added thing"')" "added thing"
+
+check "a real commit after ; is still a commit" \
+  "$(subj 'echo hi; git commit -m "added thing"')" "added thing"
+
+check "-F - has no message visible in the command string" \
+  "$(subj 'git commit -F -')" ""
+
+check "--file also stays silent" \
+  "$(subj 'git commit --file=msg.txt')" ""
+
+check "--message= long form works" \
+  "$(subj 'git commit --message="feat: y"')" "feat: y"
+
+check "--message with a space-separated value works" \
+  "$(subj 'git commit --message "feat: y"')" "feat: y"
+
+check "a non-commit git command yields no subject" \
+  "$(subj 'git status --short')" ""
+
+check "a command with no git at all yields no subject" \
+  "$(subj 'npm run test')" ""
+
+printf 'not a shell command \x00 at all' | node "$GS" >/dev/null 2>&1
+check "never throws, exits 0 on odd input" "$?" "0"
 ```
 
 - [ ] **Step 2: Run the test to verify it fails**
 
 Run: `bash tests/run-tests.sh`
-Expected: FAIL — the hook does not exist; the two `contains` checks find an empty string and the malformed-input check reports `127`.
+Expected: FAIL — the hook and library do not exist yet, so the `contains` checks find an empty string and the malformed-input checks report `127`. If the hook is instead written first with a substring match plus `sed` extraction, the suite still fails, but on a different four checks: the subject-plus-body case (grades the *last* `-m`), the `-am` case (never checked), the plain-text-mention case (false warning), and the escaped-inner-quote case (silently truncated, so the `72` never appears).
 
-- [ ] **Step 3: Write the hook**
+- [ ] **Step 3: Write the library and the hook**
+
+Create `plugins/dev-standards/hooks/lib/git-subject.js` — a small tokeniser (single/double quotes, backslash escapes, `&&`/`||`/`;`/`|` as command boundaries) that reads a raw command line on stdin and writes the commit subject implied by the first `git commit` found at a command position, or nothing when there is none or its message isn't visible in the command string. Like `json-fields.js`, every failure path degrades to empty output; nothing here throws past its own `try`/`catch`.
 
 Create `plugins/dev-standards/hooks/check-commit-msg.sh`:
 
@@ -829,23 +960,19 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 input=$(cat)
 command_line=$(printf '%s' "$input" | node "$HERE/lib/json-fields.js" tool_input.command 2>/dev/null)
 
-case "$command_line" in
-    *"git commit"*) ;;
-    *) exit 0 ;;
-esac
-
-# Only -m messages are visible here. A message on stdin (`-F -`) never
-# reaches the command string, and inventing a warning for it would fire
-# on every correctly-formed heredoc commit.
-subject=$(printf '%s' "$command_line" \
-    | sed -n 's/.*-m[[:space:]]*"\([^"]*\)".*/\1/p' \
-    | head -n 1)
+# git-subject.js tokenises the command properly (quotes, escapes, command
+# separators) so it only recognises a real `git commit` invocation and
+# finds its message reliably. Only -m/--message forms are visible here.
+# A message on stdin (`-F -`/`--file`) never reaches the command string,
+# and inventing a warning for it would fire on every correctly-formed
+# heredoc commit.
+subject=$(printf '%s' "$command_line" | node "$HERE/lib/git-subject.js" 2>/dev/null)
 [ -n "$subject" ] || exit 0
 
 problems=""
 if ! printf '%s' "$subject" | grep -qE '^(feat|fix|docs|chore|test|ci|refactor|perf|build|style|revert)(\([^)]+\))?!?: .+'; then
     problems="${problems}
-- The subject is not a Conventional Commit. Use \`type(scope): subject\` with one of feat, fix, docs, chore, test, ci, refactor, perf, build, style, revert."
+- The subject does not follow Conventional Commits. Use \`type(scope): subject\` with one of feat, fix, docs, chore, test, ci, refactor, perf, build, style, revert."
 fi
 if [ "${#subject}" -gt 72 ]; then
     problems="${problems}
@@ -886,12 +1013,12 @@ In `plugins/dev-standards/hooks/hooks.json`, add a second entry to the existing 
 - [ ] **Step 5: Run the tests to verify they pass**
 
 Run: `bash tests/run-tests.sh`
-Expected: `59 checks, 0 failed`
+Expected: `82 checks, 0 failed`
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add plugins/dev-standards/hooks/check-commit-msg.sh plugins/dev-standards/hooks/hooks.json tests/test-commit-msg.sh
+git add plugins/dev-standards/hooks/check-commit-msg.sh plugins/dev-standards/hooks/lib/git-subject.js plugins/dev-standards/hooks/hooks.json tests/test-commit-msg.sh tests/test-git-subject.sh
 git commit -m "feat: check commit subjects against the convention"
 ```
 
@@ -943,8 +1070,14 @@ contains "ADR template has Consequences" "$adr" "## Consequences"
 # Every fragment must parse as YAML — a broken one produces a project
 # whose config the openspec CLI silently refuses.
 for f in "$T/shared/config.rules.yaml" "$T/web/config.fragment.yaml" "$T/python/config.fragment.yaml"; do
+    # Not `grep -c ... || echo 0`: grep exits 1 when the count is zero, so
+    # the fallback fires on top of the `0` grep already printed and the
+    # assertion compares "0\n0" against "0" — a false FAIL on every
+    # tab-free file. Capture into a variable and default it instead.
+    # `-P` is also avoided: PCRE is not guaranteed present in Git Bash.
+    n=$(grep -c "$(printf '^\t')" "$f" 2>/dev/null)
     check "$(basename "$(dirname "$f")")/$(basename "$f") has no tab indentation" \
-      "$(grep -cP '^\t' "$f" 2>/dev/null || echo 0)" "0"
+      "${n:-0}" "0"
 done
 ```
 
@@ -1202,8 +1335,9 @@ approves; the code is what follows from it.
 1. **Propose.** `openspec change` — write `proposal.md` with a Non-Goals
    subsection, the affected capability spec deltas under `specs/`, and
    `tasks.md` where every task states how it is verified.
-2. **Stop.** Present the proposal and wait for approval. This gate is the
-   point of the whole workflow; skipping it makes the rest ceremony.
+2. **Stop.** Present the proposal and wait until it is approved. This gate
+   is the point of the whole workflow; skipping it makes the rest
+   ceremony. Nothing in step 3 onward begins before that approval.
 3. **Branch.** `git switch -c claude/<topic>` from current `main`. One
    branch per unit of work, never reused — a reused branch makes it
    impossible to say which commits a pull request contains.
@@ -1400,6 +1534,12 @@ contains "carries the review rule"           "$g" "settled with a test"
 contains "carries the deviation rule"        "$g" "before it is built"
 contains "carries the language convention"   "$g" "English"
 
+# Headless services, CLIs and scripts have no user-facing strings, yet
+# every session pays for a line that assumes otherwise. The i18n rule
+# belongs to the web profile's own files, not the layer every project
+# loads regardless of whether it has a UI.
+not_contains "does not carry the i18n rule"  "$g" "i18n"
+
 # Spec section 4.5 budgets this file at roughly 50 lines. It is loaded
 # into every session in every directory, so growth here is paid for
 # continuously and by every project, including the ones it does not
@@ -1411,7 +1551,7 @@ check "stays within its budget" "$([ "$lines" -le 60 ] && echo ok)" "ok"
 - [ ] **Step 2: Run the test to verify it fails**
 
 Run: `bash tests/run-tests.sh`
-Expected: FAIL — the template does not exist; all eight `contains` checks find an empty string and the line count reports 999.
+Expected: FAIL — the template does not exist; all `contains` checks find an empty string and the line count reports 999.
 
 - [ ] **Step 3: Write the file**
 
@@ -1431,8 +1571,7 @@ is binding for that project and may be stricter; it may not be looser.
 - A deviation from the spec is named and justified **before it is built**,
   never discovered afterwards in the diff.
 - Architecture decisions that outlive their change become ADRs under
-  `docs/adr/NNNN-title.md`, with Context, Decisions and Consequences. Every
-  decision names the alternative it rejected.
+  `docs/adr/NNNN-title.md`.
 
 ## Git
 
@@ -1454,21 +1593,26 @@ is binding for that project and may be stricter; it may not be looser.
 - Every finding — from a human, an AI, a linter, CI — ends in one of two
   states: fixed, or rejected with a stated reason. Nothing is silently
   dropped.
-- The specs and the ADRs outrank any reviewer.
+- Where a project has specs, they and its ADRs outrank any reviewer.
 - A disputed finding is settled with a test, not an argument.
 
 ## Language
 
 - Repository language is English: documentation, code comments, commit
   messages, identifiers.
-- User-facing strings are never hardcoded; they go through the project's
-  i18n layer.
 ```
+
+The ADR section headings, the i18n sentence, and the unconditional
+"specs and ADRs outrank any reviewer" line were dropped in review round 1:
+ADR structure already lives in the `adr` skill and its template; i18n only
+applies to the `web` profile and is already stated there; and the review
+rule needed the same `openspec/`-project scoping as the proposal rule
+above it, since it is vacuous where a project has no specs.
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
 Run: `bash tests/run-tests.sh`
-Expected: `105 checks, 0 failed`
+Expected: `0 failed`
 
 - [ ] **Step 5: Commit**
 
@@ -1597,10 +1741,45 @@ git add docs/adr
 git commit -m "docs: record the marketplace subdirectory layout as ADR-0001"
 ```
 
-- [ ] **Step 10: Report what was verified**
+- [ ] **Step 10: Measure the path form the hooks actually receive**
 
-State, for each of Steps 4–7, the command run and its actual output. Do not
-report the installation as working on the strength of the unit tests alone —
-they exercise the scripts, not the wiring that makes Claude Code call them.
-The wiring is confirmed only when a fresh session in a non-conforming project
-shows the conformance report.
+Steps 4–7 feed the hooks paths chosen by hand, so they prove the logic and
+nothing about the input. This step measures the real thing.
+
+Temporarily wrap `guard-change.sh` so it appends its raw stdin to a file
+before doing anything else:
+
+```bash
+cp plugins/dev-standards/hooks/guard-change.sh /tmp/guard-change.bak
+sed -i '/^input=$(cat)$/a printf "%s\n---\n" "$input" >> /tmp/hook-input.log' \
+  plugins/dev-standards/hooks/guard-change.sh
+```
+
+Start a session in any project with the plugin enabled, edit one file, then
+read `/tmp/hook-input.log` and restore the script from the backup.
+
+Report the exact form of `cwd` and `tool_input.file_path`. Two outcomes:
+
+- **Windows-native** (`C:\...` or `C:/...`) — `rel_path` handles it; record
+  the measurement and move on.
+- **POSIX / MSYS** (`/c/...`) — this is a **Critical defect to fix before
+  merge**, not an observation. `rel_path`'s prefix strip fails against the
+  Windows-native root that `openspec list --json` reports, every excluded
+  path stops being recognised, and the guard fires on `docs/` and
+  `openspec/` edits: the exact behaviour that teaches a user to switch the
+  hook off. The fix is to normalise a leading `/<drive>/` to `<drive>:/` in
+  `rel_path` before the comparison, with a test covering it.
+
+This step exists because the Task 6 review found the POSIX form breaks
+exclusion, and judged it unreachable on this platform — while the
+`security-guidance` plugin on the same machine documents Git Bash handing it
+POSIX paths and converts them with `cygpath`. The evidence points both ways,
+so it gets measured rather than argued.
+
+- [ ] **Step 11: Report what was verified**
+
+State, for each of Steps 4–7 and Step 10, the command run and its actual
+output. Do not report the installation as working on the strength of the unit
+tests alone — they exercise the scripts, not the wiring that makes Claude Code
+call them. The wiring is confirmed only when a fresh session in a
+non-conforming project shows the conformance report.

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-standards",
+  "description": "Cross-project development standard: spec-driven workflow, prescribed stacks, conformance hooks",
+  "owner": {
+    "name": "Frufus",
+    "email": "github@frufus.de"
+  },
+  "plugins": [
+    {
+      "name": "dev-standards",
+      "description": "Spec-driven development standard. Reports project conformance at session start, reminds when source is edited without an active OpenSpec change, checks commit messages, and scaffolds new projects from two prescribed stack profiles.",
+      "author": {
+        "name": "Frufus",
+        "email": "github@frufus.de"
+      },
+      "category": "development",
+      "source": "./plugins/dev-standards"
+    }
+  ]
+}
