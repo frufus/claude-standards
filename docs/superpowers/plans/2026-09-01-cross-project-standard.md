@@ -1628,10 +1628,45 @@ git add docs/adr
 git commit -m "docs: record the marketplace subdirectory layout as ADR-0001"
 ```
 
-- [ ] **Step 10: Report what was verified**
+- [ ] **Step 10: Measure the path form the hooks actually receive**
 
-State, for each of Steps 4–7, the command run and its actual output. Do not
-report the installation as working on the strength of the unit tests alone —
-they exercise the scripts, not the wiring that makes Claude Code call them.
-The wiring is confirmed only when a fresh session in a non-conforming project
-shows the conformance report.
+Steps 4–7 feed the hooks paths chosen by hand, so they prove the logic and
+nothing about the input. This step measures the real thing.
+
+Temporarily wrap `guard-change.sh` so it appends its raw stdin to a file
+before doing anything else:
+
+```bash
+cp plugins/dev-standards/hooks/guard-change.sh /tmp/guard-change.bak
+sed -i '/^input=$(cat)$/a printf "%s\n---\n" "$input" >> /tmp/hook-input.log' \
+  plugins/dev-standards/hooks/guard-change.sh
+```
+
+Start a session in any project with the plugin enabled, edit one file, then
+read `/tmp/hook-input.log` and restore the script from the backup.
+
+Report the exact form of `cwd` and `tool_input.file_path`. Two outcomes:
+
+- **Windows-native** (`C:\...` or `C:/...`) — `rel_path` handles it; record
+  the measurement and move on.
+- **POSIX / MSYS** (`/c/...`) — this is a **Critical defect to fix before
+  merge**, not an observation. `rel_path`'s prefix strip fails against the
+  Windows-native root that `openspec list --json` reports, every excluded
+  path stops being recognised, and the guard fires on `docs/` and
+  `openspec/` edits: the exact behaviour that teaches a user to switch the
+  hook off. The fix is to normalise a leading `/<drive>/` to `<drive>:/` in
+  `rel_path` before the comparison, with a test covering it.
+
+This step exists because the Task 6 review found the POSIX form breaks
+exclusion, and judged it unreachable on this platform — while the
+`security-guidance` plugin on the same machine documents Git Bash handing it
+POSIX paths and converts them with `cygpath`. The evidence points both ways,
+so it gets measured rather than argued.
+
+- [ ] **Step 11: Report what was verified**
+
+State, for each of Steps 4–7 and Step 10, the command run and its actual
+output. Do not report the installation as working on the strength of the unit
+tests alone — they exercise the scripts, not the wiring that makes Claude Code
+call them. The wiring is confirmed only when a fresh session in a
+non-conforming project shows the conformance report.
