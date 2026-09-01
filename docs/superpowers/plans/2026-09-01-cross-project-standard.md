@@ -1070,8 +1070,14 @@ contains "ADR template has Consequences" "$adr" "## Consequences"
 # Every fragment must parse as YAML — a broken one produces a project
 # whose config the openspec CLI silently refuses.
 for f in "$T/shared/config.rules.yaml" "$T/web/config.fragment.yaml" "$T/python/config.fragment.yaml"; do
+    # Not `grep -c ... || echo 0`: grep exits 1 when the count is zero, so
+    # the fallback fires on top of the `0` grep already printed and the
+    # assertion compares "0\n0" against "0" — a false FAIL on every
+    # tab-free file. Capture into a variable and default it instead.
+    # `-P` is also avoided: PCRE is not guaranteed present in Git Bash.
+    n=$(grep -c "$(printf '^\t')" "$f" 2>/dev/null)
     check "$(basename "$(dirname "$f")")/$(basename "$f") has no tab indentation" \
-      "$(grep -cP '^\t' "$f" 2>/dev/null || echo 0)" "0"
+      "${n:-0}" "0"
 done
 ```
 
