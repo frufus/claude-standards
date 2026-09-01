@@ -8,17 +8,13 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 input=$(cat)
 command_line=$(printf '%s' "$input" | node "$HERE/lib/json-fields.js" tool_input.command 2>/dev/null)
 
-case "$command_line" in
-    *"git commit"*) ;;
-    *) exit 0 ;;
-esac
-
-# Only -m messages are visible here. A message on stdin (`-F -`) never
-# reaches the command string, and inventing a warning for it would fire
-# on every correctly-formed heredoc commit.
-subject=$(printf '%s' "$command_line" \
-    | sed -n 's/.*-m[[:space:]]*"\([^"]*\)".*/\1/p' \
-    | head -n 1)
+# git-subject.js tokenises the command properly (quotes, escapes, command
+# separators) so it only recognises a real `git commit` invocation and
+# finds its message reliably. Only -m/--message forms are visible here.
+# A message on stdin (`-F -`/`--file`) never reaches the command string,
+# and inventing a warning for it would fire on every correctly-formed
+# heredoc commit.
+subject=$(printf '%s' "$command_line" | node "$HERE/lib/git-subject.js" 2>/dev/null)
 [ -n "$subject" ] || exit 0
 
 problems=""
