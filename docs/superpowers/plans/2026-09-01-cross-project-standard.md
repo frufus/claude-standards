@@ -1335,8 +1335,9 @@ approves; the code is what follows from it.
 1. **Propose.** `openspec change` — write `proposal.md` with a Non-Goals
    subsection, the affected capability spec deltas under `specs/`, and
    `tasks.md` where every task states how it is verified.
-2. **Stop.** Present the proposal and wait for approval. This gate is the
-   point of the whole workflow; skipping it makes the rest ceremony.
+2. **Stop.** Present the proposal and wait until it is approved. This gate
+   is the point of the whole workflow; skipping it makes the rest
+   ceremony. Nothing in step 3 onward begins before that approval.
 3. **Branch.** `git switch -c claude/<topic>` from current `main`. One
    branch per unit of work, never reused — a reused branch makes it
    impossible to say which commits a pull request contains.
