@@ -34,7 +34,9 @@ the toolchain for the life of the project.
 
 5. **Create `docs/adr/`** with a `.gitkeep`.
 
-6. **Install the toolchain** for the profile.
+6. **Install the toolchain** for the profile. On `web` this includes
+   `@frufus/design-system`, wired with the four CSS lines it documents,
+   unless the ADR described under that profile says otherwise.
 
 7. **Verify**: run the project's test command and its linter. Both must
    run — an empty suite that runs is fine, a suite that cannot run is not.
@@ -55,6 +57,21 @@ hardcoded user-facing strings. Vitest for units, Playwright for a thin
 end-to-end layer. ESLint and Prettier. `vue-tsc` for typechecking.
 Default posture: no backend, no secrets in the bundle, no external CDNs,
 fonts or analytics.
+
+**The user interface is built on `@frufus/design-system`.** Install it and
+wire it with the four lines it documents; take colour, type, spacing and
+the primitives from it rather than declaring them again. A project that
+redeclares a colour or a control height has drifted from the system while
+still importing it.
+
+To go without it, write an ADR whose filename contains `design-system`
+saying why. That is the whole opt-out — but it is an argument, made once,
+in writing, rather than a decision that happens by nobody installing
+anything. The conformance hook reports a `web` project that has neither
+the dependency nor the ADR.
+
+Adding a component to either side is the `component` skill's subject: it
+decides where the component belongs before anything is built.
 
 ## Profile `python`
 

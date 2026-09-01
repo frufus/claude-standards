@@ -1,7 +1,7 @@
 {
   "name": "dev-standards",
   "version": "0.1.0",
-  "description": "Spec-driven development standard. Reports project conformance at session start, reminds when source is edited without an active OpenSpec change, checks commit messages, and scaffolds new projects from two prescribed stack profiles.",
+  "description": "Spec-driven development standard. Reports project conformance at session start, reminds when source is edited without an active OpenSpec change, checks commit messages, scaffolds new projects from two prescribed stack profiles, and decides where a new UI component belongs before it is built. Web projects build on the shared design system unless an ADR says otherwise.",
   "author": {
     "name": "Frufus",
     "email": "github@frufus.de"
