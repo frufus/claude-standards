@@ -100,7 +100,6 @@ test gates, review handling. Only the toolchain differs.
   greppable and nothing is purged by surprise
 - Pinia for ephemeral UI state only; persistent data goes through a repository layer
 - vue-router; i18n from the first UI change, no hardcoded user-facing strings
-- Zod at every outside boundary — network, storage, imports, URL payloads
 - Vitest for units, Playwright for a thin end-to-end layer
 - ESLint and Prettier, `vue-tsc` for typechecking
 - Default posture: no backend, no secrets in the bundle, no external CDNs,
@@ -112,13 +111,14 @@ test gates, review handling. Only the toolchain differs.
 - `ruff` for both linting and formatting
 - `mypy` in strict mode
 - `pytest`
-- `pydantic` at every outside boundary — the role Zod plays in the web profile
 - A Dockerfile where the project is deployed
 
-The boundary-validation rule is the one both profiles genuinely share: data
-entering the process is parsed into a known shape before anything else touches
-it. Everything else in the two lists is a toolchain preference; that one is a
-correctness rule.
+Both lists are toolchain preferences. One rule sits above them and is not a
+preference: **data entering the process is parsed into a known shape at the
+boundary — network, storage, imports, URL payloads — before anything else
+touches it.** Which library does that is a project decision, made in the
+project's `openspec/config.yaml` and not by this standard; the requirement that
+something does it is standard-wide.
 
 ### 4.5 Three layers of anchoring
 
