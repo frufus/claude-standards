@@ -1534,6 +1534,12 @@ contains "carries the review rule"           "$g" "settled with a test"
 contains "carries the deviation rule"        "$g" "before it is built"
 contains "carries the language convention"   "$g" "English"
 
+# Headless services, CLIs and scripts have no user-facing strings, yet
+# every session pays for a line that assumes otherwise. The i18n rule
+# belongs to the web profile's own files, not the layer every project
+# loads regardless of whether it has a UI.
+not_contains "does not carry the i18n rule"  "$g" "i18n"
+
 # Spec section 4.5 budgets this file at roughly 50 lines. It is loaded
 # into every session in every directory, so growth here is paid for
 # continuously and by every project, including the ones it does not
@@ -1545,7 +1551,7 @@ check "stays within its budget" "$([ "$lines" -le 60 ] && echo ok)" "ok"
 - [ ] **Step 2: Run the test to verify it fails**
 
 Run: `bash tests/run-tests.sh`
-Expected: FAIL — the template does not exist; all eight `contains` checks find an empty string and the line count reports 999.
+Expected: FAIL — the template does not exist; all `contains` checks find an empty string and the line count reports 999.
 
 - [ ] **Step 3: Write the file**
 
@@ -1565,8 +1571,7 @@ is binding for that project and may be stricter; it may not be looser.
 - A deviation from the spec is named and justified **before it is built**,
   never discovered afterwards in the diff.
 - Architecture decisions that outlive their change become ADRs under
-  `docs/adr/NNNN-title.md`, with Context, Decisions and Consequences. Every
-  decision names the alternative it rejected.
+  `docs/adr/NNNN-title.md`.
 
 ## Git
 
@@ -1588,21 +1593,26 @@ is binding for that project and may be stricter; it may not be looser.
 - Every finding — from a human, an AI, a linter, CI — ends in one of two
   states: fixed, or rejected with a stated reason. Nothing is silently
   dropped.
-- The specs and the ADRs outrank any reviewer.
+- Where a project has specs, they and its ADRs outrank any reviewer.
 - A disputed finding is settled with a test, not an argument.
 
 ## Language
 
 - Repository language is English: documentation, code comments, commit
   messages, identifiers.
-- User-facing strings are never hardcoded; they go through the project's
-  i18n layer.
 ```
+
+The ADR section headings, the i18n sentence, and the unconditional
+"specs and ADRs outrank any reviewer" line were dropped in review round 1:
+ADR structure already lives in the `adr` skill and its template; i18n only
+applies to the `web` profile and is already stated there; and the review
+rule needed the same `openspec/`-project scoping as the proposal rule
+above it, since it is vacuous where a project has no specs.
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
 Run: `bash tests/run-tests.sh`
-Expected: `105 checks, 0 failed`
+Expected: `0 failed`
 
 - [ ] **Step 5: Commit**
 

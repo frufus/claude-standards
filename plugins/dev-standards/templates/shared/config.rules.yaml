@@ -1,3 +1,6 @@
+# Some rules here intentionally restate parts of the global CLAUDE.md
+# (deviation, boundary-parsing): this file travels inside the project and
+# is read by whichever agent works there, while the global file is Claude-only.
 rules:
   proposal:
     - Include a "Non-Goals" subsection under "What Changes" naming what this change deliberately does not do.

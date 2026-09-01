@@ -11,8 +11,7 @@ is binding for that project and may be stricter; it may not be looser.
 - A deviation from the spec is named and justified **before it is built**,
   never discovered afterwards in the diff.
 - Architecture decisions that outlive their change become ADRs under
-  `docs/adr/NNNN-title.md`, with Context, Decisions and Consequences. Every
-  decision names the alternative it rejected.
+  `docs/adr/NNNN-title.md`.
 
 ## Git
 
@@ -34,12 +33,10 @@ is binding for that project and may be stricter; it may not be looser.
 - Every finding — from a human, an AI, a linter, CI — ends in one of two
   states: fixed, or rejected with a stated reason. Nothing is silently
   dropped.
-- The specs and the ADRs outrank any reviewer.
+- Where a project has specs, they and its ADRs outrank any reviewer.
 - A disputed finding is settled with a test, not an argument.
 
 ## Language
 
 - Repository language is English: documentation, code comments, commit
   messages, identifiers.
-- User-facing strings are never hardcoded; they go through the project's
-  i18n layer.

@@ -16,11 +16,11 @@ approves; the code is what follows from it.
 2. **Stop.** Present the proposal and wait until it is approved. This gate
    is the point of the whole workflow; skipping it makes the rest
    ceremony. Nothing in step 3 onward begins before that approval.
-3. **Branch.** `git switch -c claude/<topic>` from current `main`. One
-   branch per unit of work, never reused — a reused branch makes it
-   impossible to say which commits a pull request contains.
+3. **Branch.** `git switch -c claude/<topic>` from current `main`. The
+   branch-naming and no-reuse rule lives in the global CLAUDE.md.
 4. **Implement**, task by task, tests first. Commit as each task
-   completes, not in one batch at the end.
+   completes — the commit-message and cadence rules live in the global
+   CLAUDE.md.
 5. **Record decisions.** Anything that outlives the change becomes an ADR
    — invoke the `adr` skill.
 6. **Deviate openly.** If the implementation must depart from the spec,
@@ -28,10 +28,10 @@ approves; the code is what follows from it.
    afterwards in the diff is a defect in the process, not a detail.
 7. **Verify.** `openspec validate` plus the project's full test suite.
    Both green before the next step.
-8. **Handle review findings.** Every finding — human, AI, linter, CI —
-   ends as fixed or as rejected with a stated reason. Nothing is silently
-   dropped. The specs and the ADRs outrank any reviewer. A disputed
-   finding is settled with a test, not an argument.
+8. **Handle review findings**: every finding is fixed or rejected with a
+   stated reason, never silently dropped. The review rule — including what
+   outranks a reviewer and how a dispute is settled — is in the global
+   CLAUDE.md.
 9. **Archive.** `openspec archive <change-id>` folds the spec deltas into
    the capability specs. The specification is now current because the work
    finished, not because someone remembered to update it.
