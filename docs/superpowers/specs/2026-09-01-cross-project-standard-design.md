@@ -1,34 +1,28 @@
 # Cross-Project Development Standard — Design
 
-Date: 2026-09-01 · Status: proposed · Scope: all projects under `C:\Users\frufus\development`
+Date: 2026-09-01 · Status: proposed · Scope: every project in the workspace
 
 ## 1. Context
 
-Six projects live side by side under `development/`, and they disagree about
-how work is specified and how it is built:
+Projects accumulate their own conventions. Left alone, each one answers the
+same questions differently: where the binding requirements live, whether a
+change starts as a proposal or as code, what a commit looks like, when tests
+have to be green, what happens to a review finding nobody agrees with. The cost
+is not felt inside any single project — it is felt when moving between them,
+because nothing learned in one carries over to the next.
 
-| Project | Stack | Spec mechanism |
-|---|---|---|
-| `Mtg-Commander-builder-` | Vue 3 + TS strict, Vite, Tailwind v4, Dexie, Comlink, Pinia, Zod | monolithic binding `docs/SPEC.md` (1130 lines) + `SPEC-EXT-01..06`, phases, `docs/CHANGELOG.md`, `docs/adr/` |
-| `Palette-swap` | Vue 3 + TS, Vite, Pinia, culori | OpenSpec (`openspec/specs/<capability>/`, 31 archived changes) |
-| `ink` | Vite + TS | none |
-| `GraphRAG` | `app` + `backend`, docker-compose | none |
-| `kraken_grid_bot` | Python, bare `main.py` + `requirements.txt` | none |
-| `news_agent` | loose HTML | none |
+Two things have to be settled to make that stop, and they are independent:
 
-`Mtg-Commander-builder-` is the reference for how work should be done. Its
-strength is not its specification format but its **discipline**: binding
-non-negotiables, ADRs for architecture decisions, one branch per unit of work,
-conventional commits, green tests as a gate, and a rule that a deviation from
-the spec is named and justified before it is built.
+- **A specification mechanism** — how requirements are written, kept current,
+  and connected to the work that changes them.
+- **A working discipline** — binding non-negotiables, architecture decisions
+  that survive their authors, branch and commit rules, test gates, and a rule
+  for handling review findings.
 
-`Palette-swap` is the reference for the specification *mechanism*. Its
-`openspec/config.yaml` already carries a product brief, non-negotiable
-principles, a tech stack, a language convention, a sourcing rule and a domain
-vocabulary — and the OpenSpec change flow (proposal, apply, archive) keeps the
-specs alive instead of letting one large document drift.
-
-This design combines the two and makes the result binding across all projects.
+A mechanism without discipline produces well-formatted documents nobody honours.
+Discipline without a mechanism produces careful work whose requirements drift
+out of date. This design settles both, and anchors them where they take effect
+rather than in a document that has to be remembered.
 
 ## 2. Goals
 
@@ -39,13 +33,13 @@ This design combines the two and makes the result binding across all projects.
 
 ## 3. Non-goals
 
-- Migrating the existing projects. The standard applies to new projects and new
-  work; each existing migration is decided separately. Converting the
-  1130-line `SPEC.md` into OpenSpec capability specs is a project of its own
-  with real risk of losing binding detail.
-- Mandating a second AI reviewer. `Mtg-Commander-builder-` routes pull requests
-  through Gemini (`docs/ai-review.md`); that presumes a second vendor and is not
-  part of the standard. How reviews are *answered* is part of it (section 4.7).
+- Migrating existing projects. The standard applies to new projects and new
+  work; each existing project's migration is decided separately. Converting a
+  large hand-maintained specification into capability specs is a project of its
+  own, with real risk of losing binding detail in the move.
+- Mandating a second AI reviewer. Routing pull requests through a second vendor
+  is a legitimate practice but presumes that vendor, so it is not part of the
+  standard. How review findings are *answered* is part of it (section 4.7).
 - Replacing what OpenSpec already does. No phase model, no separate CHANGELOG —
   see section 4.3.
 
@@ -53,79 +47,89 @@ This design combines the two and makes the result binding across all projects.
 
 ### 4.1 OpenSpec is the specification mechanism
 
-`openspec` v1.11.0 is installed globally and proven in `Palette-swap` across 31
-archived changes. Capability specs under `openspec/specs/<capability>/spec.md`
-hold current truth; `openspec/changes/<id>/` holds proposals in flight;
-archiving folds the deltas back into the specs.
+Capability specs under `openspec/specs/<capability>/spec.md` hold current truth.
+Proposals in flight live in `openspec/changes/<id>/`. Archiving a change folds
+its spec deltas back into the capability specs, so the specification is updated
+by the act of finishing work rather than by remembering to update it afterwards.
 
-The alternative — the monolithic `SPEC.md` of the reference project — was
-rejected. It works there because it was written before the code and is actively
-maintained, but it scales by growing, and a 1130-line binding document plus six
-extension files is already at the edge of what stays consistent.
+The alternative is a single binding specification document, extended over time.
+It works, and it has one genuine advantage: everything is in one place, readable
+front to back. But it scales only by growing. Past roughly a thousand lines plus
+extension files, keeping it internally consistent becomes its own task, and the
+document's age is invisible — nothing marks which sections still describe the
+system and which describe an intention from months ago. A change-based mechanism
+makes that visible by construction: what is in `specs/` was archived, what is in
+`changes/` is not built yet.
 
 ### 4.2 The OpenSpec config is the single source of project truth
 
-The reference project keeps rules in two places, `CLAUDE.md` and `docs/SPEC.md`,
-and therefore needs an explicit conflict rule ("if this file and the spec
-conflict, the spec wins"). That is duplication management, not architecture.
+A common arrangement keeps rules in two places — an agent instruction file and
+a specification document — and then needs an explicit conflict rule saying which
+one wins. That rule is a symptom. It manages duplication instead of removing it,
+and it only works as long as everyone remembers the precedence.
 
-Under this standard the project non-negotiables, tech stack, domain vocabulary
-and language convention live in the `context:` block of `openspec/config.yaml`,
-exactly as `Palette-swap` already does. The project `CLAUDE.md` becomes thin:
-orientation, commands, directory map, and a pointer. No conflict rule is needed
-because there is nothing to conflict with.
+Under this standard the project's non-negotiables, tech stack, domain vocabulary
+and language convention live in the `context:` block of `openspec/config.yaml`.
+The project's `CLAUDE.md` becomes thin: orientation, commands, directory map,
+and a pointer to the config. No conflict rule is needed, because there is
+nothing left to conflict with.
 
 ### 4.3 No phase model, no per-project CHANGELOG
 
-`Mtg-Commander-builder-` tracks progress as phases in `SPEC` section 12, with
-the current phase derived from the topmost entry in `docs/CHANGELOG.md`. The
-OpenSpec change archive carries the same information — what was decided, what
-was built, in what order — and maintaining both would be double bookkeeping
-with two sources of truth about what is done.
+A phase model — an ordered plan of build stages, with a hand-maintained log
+recording which stage is current — answers the questions "what was decided",
+"what was built" and "in what order". The OpenSpec change archive answers the
+same three. Keeping both means maintaining two records of what is done, which
+will eventually disagree, and at that point neither can be trusted without
+checking the other.
 
-Release notes for users, if a project ever needs them, are a different artifact
-and are generated from commits, not maintained by hand.
+Release notes for users, where a project needs them, are a different artifact
+with a different audience, and are generated from commits rather than maintained
+by hand.
 
 ### 4.4 Two stack profiles
 
-Both profiles share the method: OpenSpec, ADRs, commit and branch discipline,
+Both profiles share the method — OpenSpec, ADRs, branch and commit discipline,
 test gates, review handling. Only the toolchain differs.
 
-**Profile `web`** — the intersection of what the two reference projects already
-run, so it is proven rather than aspirational:
+**Profile `web`**:
 
 - Vue 3 with `<script setup>`, TypeScript strict, Vite
 - Tailwind v4: design tokens only in `@theme`; no dynamically composed class
-  names — state colours as explicit maps
+  names — state colours as explicit maps, so that every class a build sees is
+  greppable and nothing is purged by surprise
 - Pinia for ephemeral UI state only; persistent data goes through a repository layer
-- vue-router; i18n (German and English) from the first UI change, no hardcoded
-  user-facing strings
-- Zod at every outside boundary (network, storage, imports, URL payloads)
+- vue-router; i18n from the first UI change, no hardcoded user-facing strings
+- Zod at every outside boundary — network, storage, imports, URL payloads
 - Vitest for units, Playwright for a thin end-to-end layer
 - ESLint and Prettier, `vue-tsc` for typechecking
-- Default posture: no backend, no secrets in the bundle, no external
-  CDNs, fonts or analytics
+- Default posture: no backend, no secrets in the bundle, no external CDNs,
+  fonts or analytics
 
-**Profile `python`** — deliberately stricter than the current state of
-`kraken_grid_bot`:
+**Profile `python`**:
 
-- `uv` for dependency and environment management, replacing `requirements.txt`
+- `uv` for dependency and environment management
 - `ruff` for both linting and formatting
 - `mypy` in strict mode
 - `pytest`
 - `pydantic` at every outside boundary — the role Zod plays in the web profile
 - A Dockerfile where the project is deployed
 
+The boundary-validation rule is the one both profiles genuinely share: data
+entering the process is parsed into a known shape before anything else touches
+it. Everything else in the two lists is a toolchain preference; that one is a
+correctness rule.
+
 ### 4.5 Three layers of anchoring
 
-**Layer 1 — `~/.claude/CLAUDE.md`.** Loaded automatically in every session in
+**Layer 1 — `~/.claude/CLAUDE.md`.** Loaded automatically in every session, in
 every directory. Holds only what is project-independent: the SDD workflow, the
-commit and branch rules, ADR location and shape, the language convention, the
+branch and commit rules, ADR location and shape, the language convention, the
 deviation rule, the test gate, and the review rule (section 4.7). Roughly 50
-lines. It is the only mechanism that applies without anyone invoking anything.
+lines. This is the only layer that applies without anyone invoking anything,
+which is why it carries the rules that must never depend on being remembered.
 
-**Layer 2 — plugin `frufus-standards`**, a git repository at
-`C:\Users\frufus\development\claude-standards\`, registered as a local
+**Layer 2 — the standards plugin**, a git repository registered as a local
 marketplace and enabled globally:
 
 ```
@@ -166,18 +170,21 @@ than guessed at.
 | Hook | Matcher | Behaviour |
 |---|---|---|
 | `SessionStart` | — | Conformance report: is there an `openspec/`? a `CLAUDE.md`? a `docs/adr/`? does the toolchain match the declared profile? Reports; never aborts. |
-| `PreToolUse` | `Edit`, `Write` | Source files only, defined by exclusion: everything except `openspec/`, `docs/`, `.claude/`, dotfiles and lockfiles. An exclusion list rather than an allowlist of `src/`, because a flat Python layout keeps its modules at the repository root and an allowlist would silently exempt the whole project. Runs `openspec list`; if no change is active, emits a reminder to write a proposal first. Does not deny. |
+| `PreToolUse` | `Edit`, `Write` | Source files only, defined by exclusion: everything except `openspec/`, `docs/`, `.claude/`, dotfiles and lockfiles. Runs `openspec list`; if no change is active, emits a reminder to write a proposal first. Does not deny. |
 | `PreToolUse` | `Bash(git commit:*)` | Checks the message against Conventional Commits and the 72-character subject limit. Reports. |
+
+Source files are identified by exclusion rather than by an allowlist of `src/`,
+`app/` and `backend/`, because a flat layout keeps its modules at the repository
+root. An allowlist would silently exempt exactly those projects — the ones with
+the least structure, where the guard is worth the most.
 
 Hard denial was rejected. It necessarily catches legitimate work — a typo in a
 comment, a hotfix, repairing a broken build — and a guard that fires on
 legitimate work gets switched off, at which point it protects nothing. A warning
-that lands in the agent context is reliable enough, because the agent reads it
+that lands in the agent's context is reliable enough, because the agent reads it
 and the human sees it.
 
 ### 4.7 Reviews are answered, not obeyed
-
-From `Mtg-Commander-builder-`, generalised away from any specific reviewer:
 
 - A review finding — from a human, a second AI, a linter, CI, `/code-review`,
   the `pr-review-toolkit` agents — ends in one of exactly two states: fixed, or
@@ -186,7 +193,8 @@ From `Mtg-Commander-builder-`, generalised away from any specific reviewer:
 - A disputed finding is settled with a test, not an argument.
 
 The third rule is the reason to keep this at all: it converts disagreement into
-evidence instead of discussion.
+evidence instead of discussion, and it means a reviewer being wrong costs one
+test rather than an exchange of opinions.
 
 ## 5. What a conforming project looks like
 
@@ -209,18 +217,21 @@ evidence instead of discussion.
 2. The proposal is approved by the human before `tasks.md` is executed.
 3. Architecture decisions inside the change become ADRs under `docs/adr/`.
 4. Implementation runs on a branch `claude/<topic>`, branched from current
-   `main`, one branch per unit of work, never reused.
+   `main`, one branch per unit of work, never reused. A reused branch makes it
+   impossible to say which commits a given pull request contains.
 5. Commits are conventional, focused, and made as work completes — not batched
    at the end.
 6. Tests are green before the change is archived.
 7. Review findings are handled per section 4.7.
-8. Archiving folds the spec deltas of the change into the capability specs.
+8. Archiving folds the change's spec deltas into the capability specs.
+9. A deviation from the spec is named and justified before it is built, never
+   discovered afterwards in the diff.
 
 ## 7. Bootstrap order
 
-1. Create `claude-standards` as a git repository; commit this design.
+1. Create the standards repository; commit this design.
 2. Write `~/.claude/CLAUDE.md`.
-3. Distil the templates from `Mtg-Commander-builder-` and `Palette-swap`.
+3. Write the profile templates.
 4. Build the plugin: `marketplace.json`, `plugin.json`, skills, hooks.
 5. Register the marketplace locally and enable the plugin.
 6. Verify the hooks against a throwaway project — confirm the conformance
@@ -228,12 +239,13 @@ evidence instead of discussion.
    commit check catches a malformed message.
 7. Only then scaffold the first real project with `new-project`.
 
+Step 6 is not optional. A hook that fails silently is worse than no hook,
+because it is trusted.
+
 ## 8. Deferred
 
-- Migration of `Mtg-Commander-builder-` from `SPEC.md` to OpenSpec capability
-  specs. Decided separately, per section 3.
-- Migration of `ink`, `GraphRAG`, `kraken_grid_bot`, `news_agent`. Each gets its
-  own decision; `Palette-swap` is already close to conforming and is the
-  cheapest first candidate.
-- Whether `new-project` should also initialise the GitHub remote and CI
-  workflow. Out of scope until the standard itself is proven.
+- Migration of existing projects, per section 3. Each gets its own decision;
+  a project already using OpenSpec is the cheapest first candidate, and one
+  with a large hand-maintained specification is the most expensive.
+- Whether `new-project` should also initialise the remote and a CI workflow.
+  Out of scope until the standard itself is proven.
