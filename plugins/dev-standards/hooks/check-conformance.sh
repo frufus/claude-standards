@@ -33,11 +33,28 @@ fi
 # records the decision to go without. The opt-out is deliberately an argument
 # in writing rather than a config key: going without should cost a paragraph,
 # not a line.
+#
+# The dependency is read out of the dependency fields rather than grepped for.
+# A grep also matches the package's own `name`, which would silence the check
+# for the design system itself by coincidence rather than on purpose - and
+# would keep silencing it for anything that merely mentions the string.
 if grep -qE '^profile:[[:space:]]*web[[:space:]]*$' "$cwd/openspec/config.yaml" 2>/dev/null &&
     [ -f "$cwd/package.json" ] &&
-    ! grep -q '@frufus/design-system' "$cwd/package.json" 2>/dev/null &&
     ! ls "$cwd"/docs/adr/*design-system* >/dev/null 2>&1; then
-    add "no \`@frufus/design-system\` — the web profile builds on the shared design system. Install and wire it, or record the decision to go without as an ADR whose filename contains \`design-system\`."
+
+    ds=$(node -e '
+      const pkg = require(process.argv[1]);
+      const name = "@frufus/design-system";
+      // The design system is not asked to depend on itself.
+      if (pkg.name === name) { console.log("exempt"); process.exit(0) }
+      const has = ["dependencies", "devDependencies", "peerDependencies"]
+        .some((field) => pkg[field] && name in pkg[field]);
+      console.log(has ? "present" : "missing");
+    ' "$cwd/package.json" 2>/dev/null)
+
+    if [ "$ds" = "missing" ]; then
+        add "no \`@frufus/design-system\` — the web profile builds on the shared design system. Install and wire it, or record the decision to go without as an ADR whose filename contains \`design-system\`."
+    fi
 fi
 
 # A conforming project gets no output at all. Anything written here is

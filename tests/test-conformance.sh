@@ -94,4 +94,54 @@ printf '{"name":"x"}' > "$py/package.json"
 out=$(printf '{"cwd":"%s"}' "$py" | bash "$HOOK" 2>/dev/null)
 check "never asks a python project for it" "$out" ""
 
-rm -rf "$bare" "$full" "$noprofile" "$nods" "$withds" "$optout" "$early" "$py"
+# The design system is not asked to depend on itself - by its name, not by the
+# accident of that string appearing anywhere in the file.
+itself=$(mktemp -d)
+mkdir -p "$itself/openspec" "$itself/docs/adr"
+printf 'schema: spec-driven
+profile: web
+' > "$itself/openspec/config.yaml"
+printf '# CLAUDE.md
+' > "$itself/CLAUDE.md"
+printf '{"name":"@frufus/design-system","version":"0.1.0"}' > "$itself/package.json"
+out=$(printf '{"cwd":"%s"}' "$itself" | bash "$HOOK" 2>/dev/null)
+check "the design system is exempt from depending on itself" "$out" ""
+
+# Mentioning the name is not depending on it. A grep would pass this.
+mention=$(mktemp -d)
+mkdir -p "$mention/openspec" "$mention/docs/adr"
+printf 'schema: spec-driven
+profile: web
+' > "$mention/openspec/config.yaml"
+printf '# CLAUDE.md
+' > "$mention/CLAUDE.md"
+printf '{"name":"x","description":"a fork of @frufus/design-system"}' > "$mention/package.json"
+out=$(printf '{"cwd":"%s"}' "$mention" | bash "$HOOK" 2>/dev/null)
+contains "a mention is not a dependency" "$out" "design-system"
+
+# A devDependency counts: the package is a build-time dependency for a
+# consumer that only compiles it.
+dev=$(mktemp -d)
+mkdir -p "$dev/openspec" "$dev/docs/adr"
+printf 'schema: spec-driven
+profile: web
+' > "$dev/openspec/config.yaml"
+printf '# CLAUDE.md
+' > "$dev/CLAUDE.md"
+printf '{"devDependencies":{"@frufus/design-system":"^0.1.0"}}' > "$dev/package.json"
+out=$(printf '{"cwd":"%s"}' "$dev" | bash "$HOOK" 2>/dev/null)
+check "a devDependency counts too" "$out" ""
+
+# A package.json that cannot be parsed must not crash the hook or nag falsely.
+broken=$(mktemp -d)
+mkdir -p "$broken/openspec" "$broken/docs/adr"
+printf 'schema: spec-driven
+profile: web
+' > "$broken/openspec/config.yaml"
+printf '# CLAUDE.md
+' > "$broken/CLAUDE.md"
+printf 'not json at all' > "$broken/package.json"
+printf '{"cwd":"%s"}' "$broken" | bash "$HOOK" >/dev/null 2>&1
+check "an unparsable package.json still exits 0" "$?" "0"
+
+rm -rf "$bare" "$full" "$noprofile" "$nods" "$withds" "$optout" "$early" "$py"   "$itself" "$mention" "$dev" "$broken"
