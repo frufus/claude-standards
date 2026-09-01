@@ -1,0 +1,6 @@
+# Git for Windows checks files out with CRLF by default. bash reads the
+# trailing \r as part of the shebang and refuses the file, so the hook
+# would break on exactly the machines that need this line. Shell scripts
+# stay LF everywhere; nothing else is renormalized, to keep the working
+# trees people already have unchanged.
+*.sh text eol=lf
