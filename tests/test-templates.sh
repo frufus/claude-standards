@@ -28,3 +28,8 @@ for f in "$T/shared/config.rules.yaml" "$T/web/config.fragment.yaml" "$T/python/
     check "$(basename "$(dirname "$f")")/$(basename "$f") has no tab indentation" \
       "${n:-0}" "0"
 done
+
+web=$(cat "$T/web/CLAUDE.md" 2>/dev/null)
+contains "web template names the design system" "$web" "@frufus/design-system"
+contains "web template forbids redeclaring its values" "$web" "redeclare"
+contains "web template points at the component skill" "$web" "component"

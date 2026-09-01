@@ -18,6 +18,13 @@ npm run typecheck  # vue-tsc
 npm run format     # Prettier
 ```
 
+## Design system
+
+The interface is built on `@frufus/design-system`: tokens, primitives and the
+two stylesheets it documents. Do not redeclare a colour, a control height, a
+radius or a focus ring — take them from it. New components go through the
+`component` skill, which decides whether they belong here or there.
+
 ## Directories
 
 ```

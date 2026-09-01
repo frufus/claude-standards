@@ -27,6 +27,19 @@ fi
 [ -f "$cwd/CLAUDE.md" ] || add "no \`CLAUDE.md\` — nothing orients a session in this project."
 [ -d "$cwd/docs/adr" ] || add "no \`docs/adr/\` — architecture decisions have nowhere to live."
 
+# The web profile builds its interface on the shared design system. Reported
+# only once there is a package.json to depend on it - before that the project
+# has no toolchain yet and the reminder would be noise - and never when an ADR
+# records the decision to go without. The opt-out is deliberately an argument
+# in writing rather than a config key: going without should cost a paragraph,
+# not a line.
+if grep -qE '^profile:[[:space:]]*web[[:space:]]*$' "$cwd/openspec/config.yaml" 2>/dev/null &&
+    [ -f "$cwd/package.json" ] &&
+    ! grep -q '@frufus/design-system' "$cwd/package.json" 2>/dev/null &&
+    ! ls "$cwd"/docs/adr/*design-system* >/dev/null 2>&1; then
+    add "no \`@frufus/design-system\` — the web profile builds on the shared design system. Install and wire it, or record the decision to go without as an ADR whose filename contains \`design-system\`."
+fi
+
 # A conforming project gets no output at all. Anything written here is
 # spent context in every session for the life of the project.
 [ -n "$missing" ] || exit 0
