@@ -876,7 +876,7 @@ subject=$(printf '%s' "$command_line" \
 problems=""
 if ! printf '%s' "$subject" | grep -qE '^(feat|fix|docs|chore|test|ci|refactor|perf|build|style|revert)(\([^)]+\))?!?: .+'; then
     problems="${problems}
-- The subject is not a Conventional Commit. Use \`type(scope): subject\` with one of feat, fix, docs, chore, test, ci, refactor, perf, build, style, revert."
+- The subject does not follow Conventional Commits. Use \`type(scope): subject\` with one of feat, fix, docs, chore, test, ci, refactor, perf, build, style, revert."
 fi
 if [ "${#subject}" -gt 72 ]; then
     problems="${problems}
