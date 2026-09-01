@@ -2,7 +2,7 @@ S="plugins/dev-standards/skills"
 
 # A skill whose frontmatter is malformed does not fail loudly — it simply
 # never loads. Asserting the shape here is the only cheap way to catch it.
-for skill in adr sdd-change; do
+for skill in adr sdd-change new-project; do
     f="$S/$skill/SKILL.md"
     check "$skill starts with frontmatter" "$(head -n 1 "$f" 2>/dev/null)" "---"
     contains "$skill declares its name"        "$(cat "$f" 2>/dev/null)" "name: $skill"
@@ -15,3 +15,10 @@ contains "adr points at the template" "$(cat "$S/adr/SKILL.md" 2>/dev/null)" "te
 contains "sdd-change covers archiving" "$(cat "$S/sdd-change/SKILL.md" 2>/dev/null)" "openspec archive"
 contains "sdd-change requires approval before implementing" \
   "$(cat "$S/sdd-change/SKILL.md" 2>/dev/null)" "approved"
+
+np=$(cat "$S/new-project/SKILL.md" 2>/dev/null)
+contains "new-project names both profiles"   "$np" "web"
+contains "new-project names the python profile" "$np" "python"
+contains "new-project initialises openspec"  "$np" "openspec init"
+contains "new-project creates the ADR home"  "$np" "docs/adr"
+contains "new-project ends with the conformance check" "$np" "conformance"
