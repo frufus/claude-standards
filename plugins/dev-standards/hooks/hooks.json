@@ -1,0 +1,15 @@
+{
+  "description": "Development standard: conformance report at session start, reminders on source edits and commits",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/check-conformance.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}
