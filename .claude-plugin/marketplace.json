@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "dev-standards",
-      "description": "Spec-driven development standard. Reports project conformance at session start, reminds when source is edited without an active OpenSpec change, checks commit messages, and scaffolds new projects from two prescribed stack profiles.",
+      "description": "Spec-driven development standard. Reports project conformance at session start, reminds when source is edited without an active OpenSpec change, checks commit messages, verifies changes in a fresh sub-agent, and scaffolds new projects from two prescribed stack profiles.",
       "author": {
         "name": "Frufus",
         "email": "github@frufus.de"
