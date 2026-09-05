@@ -38,6 +38,8 @@ contains "new-project points at the component skill" "$np" "component"
 contains "new-project writes the scripts"        "$np" "scripts/verify"
 contains "new-project makes them executable in git" "$np" "update-index --chmod=+x"
 contains "new-project gitignores the dev pidfile" "$np" ".dev.pid"
+contains "new-project keeps the scripts LF on clone"   "$np" "scripts/* text eol=lf"
+contains "new-project keeps Playwright specs out of Vitest" "$np" 'exclude: ["e2e/**"'
 
 vf=$(cat "$S/verify/SKILL.md" 2>/dev/null)
 contains "verify runs in a fresh sub-agent"         "$vf" "fresh sub-agent"

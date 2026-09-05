@@ -30,5 +30,12 @@ contains "web verify brings the dev server up for e2e" "$web" "scripts/dev up"
 contains "web verify takes the server down again"      "$web" "scripts/dev down"
 contains "web verify stops at the first failure"       "$web" "exit 1"
 
+# Under Git Bash a background job's pid is an MSYS pid that taskkill does
+# not know, and netstat's state column is localised. The listener is found
+# by its port and zero foreign address, never by the word LISTENING.
+contains "web dev finds the listener by port"       "$(cat "$T/web/scripts/dev" 2>/dev/null)" "netstat -ano"
+contains "web dev matches a zero foreign address"   "$(cat "$T/web/scripts/dev" 2>/dev/null)" ':0$/'
+not_contains "web dev never matches the localised state word" "$(cat "$T/web/scripts/dev" 2>/dev/null)" '"LISTENING"'
+
 contains ".gitattributes keeps the script templates LF" \
   "$(cat .gitattributes 2>/dev/null)" "templates/*/scripts/* text eol=lf"

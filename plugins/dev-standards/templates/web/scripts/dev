@@ -18,10 +18,22 @@ LOG=".dev.log"
 
 is_up() { curl -sf -o /dev/null "$URL" 2>/dev/null; }
 
+listener_pid() { # -> pid of the process listening on PORT, or nothing
+    # Under Git Bash the pid of a background job is an MSYS pid, which
+    # Windows tools do not know; the process is found by its port instead.
+    # netstat's state column is localised ("ABHÖREN" on a German system),
+    # so a listener is recognised by its zero foreign address, not by the
+    # word LISTENING.
+    if command -v taskkill >/dev/null 2>&1; then
+        netstat -ano 2>/dev/null | awk -v p=":${PORT}" '$2 ~ p"$" && $3 ~ /:0$/ { print $5; exit }'
+    elif command -v lsof >/dev/null 2>&1; then
+        lsof -ti "tcp:${PORT}" -sTCP:LISTEN 2>/dev/null | head -n 1
+    fi
+}
+
 stop_pid() { # pid
-    # On Windows the pid is npm's; Vite is its child and survives a plain
-    # kill. taskkill //T takes the tree. Git Bash would rewrite /T as a
-    # path, hence the doubled slashes.
+    # taskkill //T takes the process tree, so Vite's helpers go with it.
+    # Git Bash would rewrite /T as a path, hence the doubled slashes.
     if command -v taskkill >/dev/null 2>&1; then
         taskkill //PID "$1" //T //F >/dev/null 2>&1
     else
@@ -37,9 +49,14 @@ case "${1:-up}" in
             exit 0
         fi
         npm run dev -- --port "$PORT" --strictPort > "$LOG" 2>&1 &
-        echo $! > "$PIDFILE"
+        job=$!
         for _ in $(seq 1 60); do
-            if is_up; then echo "$URL"; exit 0; fi
+            if is_up; then
+                pid=$(listener_pid)
+                echo "${pid:-$job}" > "$PIDFILE"
+                echo "$URL"
+                exit 0
+            fi
             sleep 0.5
         done
         echo "dev server did not answer on $URL within 30 s; see $LOG" >&2
