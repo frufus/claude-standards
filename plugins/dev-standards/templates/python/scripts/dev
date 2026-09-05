@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# The project's entry point, for a human or a verifier.
+#
+# Most python projects here have no long-running process: the verifier
+# calls the CLI or module directly. new-project replaces the entry point
+# below with the real one. If this project grows a server, make `up`
+# start it idempotently and print its URL last, and make `down` stop it.
+set -uo pipefail
+cd "$(dirname "$0")/.." || exit 1
+
+ENTRY="uv run python -m <package>"
+
+case "${1:-up}" in
+    up)
+        echo "no long-running process; already up"
+        echo "$ENTRY"
+        exit 0
+        ;;
+    down)
+        exit 0
+        ;;
+    *)
+        echo "usage: scripts/dev [up|down]" >&2
+        exit 2
+        ;;
+esac

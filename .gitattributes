@@ -4,3 +4,7 @@
 # stay LF everywhere; nothing else is renormalized, to keep the working
 # trees people already have unchanged.
 *.sh text eol=lf
+
+# The script templates have no extension, so the rule above does not
+# reach them. They are bash and must stay LF for the same reason.
+plugins/dev-standards/templates/*/scripts/* text eol=lf

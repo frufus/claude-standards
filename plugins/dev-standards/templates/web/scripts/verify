@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Lint, typecheck, unit tests, end-to-end tests — in that order, stopping
+# at the first failure. The exit status is the verdict. Takes no
+# arguments: a verifier that could be told to skip a step is not one.
+set -uo pipefail
+cd "$(dirname "$0")/.." || exit 1
+
+run() { # label command...
+    local label="$1"; shift
+    printf '\n== %s\n' "$label"
+    "$@" && return 0
+    printf '\nverify: %s failed (exit %s)\n' "$label" "$?" >&2
+    exit 1
+}
+
+# The server is started here rather than by Playwright's own webServer
+# hook so that a verifier which already has it up (via scripts/dev) is
+# not fought over the port. Set reuseExistingServer: true in
+# playwright.config.ts and both paths agree.
+started=0
+cleanup() { [ "$started" -eq 1 ] && scripts/dev down >/dev/null; }
+trap cleanup EXIT
+
+run lint      npm run lint
+run typecheck npm run typecheck
+run unit      npm run test -- --run
+
+up=$(scripts/dev up) || { printf '%s\n' "$up" >&2; exit 1; }
+case "$up" in "already up"*) ;; *) started=1 ;; esac
+run e2e       npm run test:e2e
+
+printf '\nverify: all green\n'

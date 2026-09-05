@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# Brings the dev server up for a human or a verifier, and takes it down.
+#
+#   scripts/dev        start Vite if it is not up; print the URL last
+#   scripts/dev down   stop what this script started
+#
+# Idempotent: a second `up` prints "already up" and the URL and exits 0.
+# It never starts a second instance. A running watcher holds the project
+# directory on Windows, which is why `down` exists: `openspec archive`
+# fails with EPERM while Vite is up.
+set -uo pipefail
+cd "$(dirname "$0")/.." || exit 1
+
+PORT="${PORT:-5173}"
+URL="http://localhost:${PORT}"
+PIDFILE=".dev.pid"
+LOG=".dev.log"
+
+is_up() { curl -sf -o /dev/null "$URL" 2>/dev/null; }
+
+stop_pid() { # pid
+    # On Windows the pid is npm's; Vite is its child and survives a plain
+    # kill. taskkill //T takes the tree. Git Bash would rewrite /T as a
+    # path, hence the doubled slashes.
+    if command -v taskkill >/dev/null 2>&1; then
+        taskkill //PID "$1" //T //F >/dev/null 2>&1
+    else
+        kill "$1" 2>/dev/null
+    fi
+}
+
+case "${1:-up}" in
+    up)
+        if is_up; then
+            echo "already up"
+            echo "$URL"
+            exit 0
+        fi
+        npm run dev -- --port "$PORT" --strictPort > "$LOG" 2>&1 &
+        echo $! > "$PIDFILE"
+        for _ in $(seq 1 60); do
+            if is_up; then echo "$URL"; exit 0; fi
+            sleep 0.5
+        done
+        echo "dev server did not answer on $URL within 30 s; see $LOG" >&2
+        exit 1
+        ;;
+    down)
+        if [ -f "$PIDFILE" ]; then
+            stop_pid "$(cat "$PIDFILE")"
+            rm -f "$PIDFILE"
+            echo "stopped"
+        else
+            echo "not started by this script; nothing to stop"
+        fi
+        exit 0
+        ;;
+    *)
+        echo "usage: scripts/dev [up|down]" >&2
+        exit 2
+        ;;
+esac

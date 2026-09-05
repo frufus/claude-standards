@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Lint, format check, typecheck, unit tests — in that order, stopping at
+# the first failure. The exit status is the verdict. Takes no arguments.
+set -uo pipefail
+cd "$(dirname "$0")/.." || exit 1
+
+run() { # label command...
+    local label="$1"; shift
+    printf '\n== %s\n' "$label"
+    "$@" && return 0
+    printf '\nverify: %s failed (exit %s)\n' "$label" "$?" >&2
+    exit 1
+}
+
+run lint      uv run ruff check .
+run format    uv run ruff format --check .
+run typecheck uv run mypy .
+run unit      uv run pytest
+
+printf '\nverify: all green\n'
