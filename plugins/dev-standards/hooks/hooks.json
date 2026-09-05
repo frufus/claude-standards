@@ -1,5 +1,5 @@
 {
-  "description": "Development standard: conformance report at session start, reminders on source edits and commits",
+  "description": "Development standard: conformance report at session start, reminders on source edits, commits and shipping an unverified change",
   "hooks": {
     "SessionStart": [
       {
@@ -27,6 +27,10 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/check-commit-msg.sh\""
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/check-ship.sh\""
           }
         ]
       }
