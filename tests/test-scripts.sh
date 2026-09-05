@@ -9,7 +9,7 @@ for p in web python; do
         f="$T/$p/scripts/$s"
         check "$p/scripts/$s has a bash shebang" "$(head -n 1 "$f" 2>/dev/null)" "#!/usr/bin/env bash"
         check "$p/scripts/$s parses" "$(bash -n "$f" 2>/dev/null && echo ok)" "ok"
-        check "$p/scripts/$s has no CR line endings" "$(grep -c $'\r' "$f" 2>/dev/null)" "0"
+        check "$p/scripts/$s has no CR line endings" "$(grep -c "$(printf '\r')" "$f" 2>/dev/null)" "0"
     done
     dev=$(cat "$T/$p/scripts/dev" 2>/dev/null)
     contains "$p/scripts/dev handles up"   "$dev" "up)"
