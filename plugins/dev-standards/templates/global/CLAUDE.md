@@ -36,6 +36,14 @@ is binding for that project and may be stricter; it may not be looser.
 - Where a project has specs, they and its ADRs outrank any reviewer.
 - A disputed finding is settled with a test, not an argument.
 
+## Alone and with the human
+
+- Alone: propose, branch, implement approved tasks, verify, open a pull
+  request, answer review findings, archive after merge.
+- With the human: approve a proposal, accept a deviation, merge, and any
+  action that is destructive or hard to reverse.
+- "With the human" means stop and wait, not proceed and mention.
+
 ## Language
 
 - Repository language is English: documentation, code comments, commit
