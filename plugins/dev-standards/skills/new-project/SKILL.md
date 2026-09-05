@@ -34,14 +34,28 @@ the toolchain for the life of the project.
 
 5. **Create `docs/adr/`** with a `.gitkeep`.
 
-6. **Install the toolchain** for the profile. On `web` this includes
+6. **Write `scripts/`** from `${CLAUDE_PLUGIN_ROOT}/templates/<profile>/scripts/`:
+   copy `dev` and `verify` verbatim, then `chmod +x scripts/dev scripts/verify`
+   and `git update-index --chmod=+x scripts/dev scripts/verify` — git on
+   Windows does not record the mode from the filesystem. On `python`,
+   replace `<package>` in `scripts/dev` with the real entry point. Add
+   `.dev.pid` and `.dev.log` to `.gitignore`; the web `dev` script writes
+   them. These two scripts are the deterministic steps of every change:
+   `scripts/dev` brings the application up idempotently and prints where,
+   `scripts/verify` runs lint, typecheck, units and end-to-end in that
+   order and exits non-zero at the first failure. The `verify` skill
+   runs both; a session never composes those steps by hand.
+
+7. **Install the toolchain** for the profile. On `web` this includes
    `@frufus/design-system`, wired with the four CSS lines it documents,
-   unless the ADR described under that profile says otherwise.
+   unless the ADR described under that profile says otherwise. Set
+   `reuseExistingServer: true` in `playwright.config.ts` so Playwright
+   and `scripts/dev` agree about the server.
 
-7. **Verify**: run the project's test command and its linter. Both must
-   run — an empty suite that runs is fine, a suite that cannot run is not.
+8. **Verify**: run `scripts/verify`. It must run to the end — an empty
+   suite that runs is fine, a suite that cannot run is not.
 
-8. **Confirm conformance**: the SessionStart conformance hook must report
+9. **Confirm conformance**: the SessionStart conformance hook must report
    nothing for this project. Start a session in it, or run
    `bash "${CLAUDE_PLUGIN_ROOT}/hooks/check-conformance.sh"` with
    `{"cwd":"<project>"}` on stdin and confirm the output is empty.

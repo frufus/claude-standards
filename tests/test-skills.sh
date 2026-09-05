@@ -34,3 +34,7 @@ contains "component says what is not a component"    "$cp" "What is not a new co
 contains "new-project prescribes the design system" "$np" "@frufus/design-system"
 contains "new-project gives the opt-out a written form" "$np" "ADR"
 contains "new-project points at the component skill" "$np" "component"
+
+contains "new-project writes the scripts"        "$np" "scripts/verify"
+contains "new-project makes them executable in git" "$np" "update-index --chmod=+x"
+contains "new-project gitignores the dev pidfile" "$np" ".dev.pid"

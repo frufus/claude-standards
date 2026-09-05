@@ -10,11 +10,11 @@ requirements are the capability specs under `openspec/specs/`; anything under
 ## Commands
 
 ```
-npm run dev        # Vite dev server
-npm run test       # Vitest
-npm run test:e2e   # Playwright
-npm run lint       # ESLint
-npm run typecheck  # vue-tsc
+scripts/verify     # lint, typecheck, unit, e2e — the whole check, in order
+scripts/dev        # dev server up (idempotent, prints the URL); `down` stops it
+npm run test       # Vitest only
+npm run lint       # ESLint only
+npm run typecheck  # vue-tsc only
 npm run format     # Prettier
 ```
 
@@ -28,6 +28,7 @@ radius or a focus ring — take them from it. New components go through the
 ## Directories
 
 ```
+scripts/           Deterministic steps: dev up/down, verify
 src/               Application code
 openspec/          Binding specs and change proposals
 docs/adr/          Architecture decisions
