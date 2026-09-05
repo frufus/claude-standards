@@ -41,3 +41,7 @@ for p in web python; do
     contains "$p CLAUDE.md lists scripts/verify first" "$first" "scripts/verify"
     contains "$p CLAUDE.md lists scripts/dev"  "$(cat "$T/$p/CLAUDE.md" 2>/dev/null)" "scripts/dev"
 done
+
+rules=$(cat "$T/shared/config.rules.yaml" 2>/dev/null)
+contains "shared rules update progress.md on apply"       "$rules" "progress.md"
+contains "shared rules require verification on archive"   "$rules" "verification.md"

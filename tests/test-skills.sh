@@ -51,3 +51,11 @@ contains "verify writes verification.md"            "$vf" "verification.md"
 contains "verify keeps proof in the change"         "$vf" "proof/"
 contains "verify requires every finding answered"   "$vf" "Answer:"
 contains "verify appends to progress.md"            "$vf" "progress.md"
+
+sc=$(cat "$S/sdd-change/SKILL.md" 2>/dev/null)
+check "sdd-change gives every step a Produces line" "$(printf '%s' "$sc" | grep -c 'Produces:')" "9"
+contains "sdd-change invokes verify at step 7"       "$sc" "\`verify\` skill"
+contains "sdd-change names verification.md"         "$sc" "verification.md"
+contains "sdd-change keeps state in progress.md"    "$sc" "progress.md"
+contains "sdd-change states the missing-artefact rule" "$sc" "has not happened"
+contains "sdd-change logs the session boundary"     "$sc" "session ended"
