@@ -1,8 +1,9 @@
 // Tokenises a shell-ish command line, respecting single quotes, double
 // quotes (with backslash escapes for `"` `\` `$` `` ` ``) and backslash
-// escapes outside quotes. `&&`, `||`, `;` and `|` are emitted as separate
-// "op" tokens so callers can tell a real command boundary from plain text
-// that happens to contain those characters mid-word.
+// escapes outside quotes. `&&`, `||`, `;` and `|`, and a newline outside
+// quotes, are emitted as separate "op" tokens so callers can tell a real
+// command boundary from plain text that happens to contain those
+// characters mid-word.
 //
 // Shared by git-subject.js (commit subjects) and ship-command.js (push,
 // PR and archive). One tokeniser, so the two hooks cannot disagree about
@@ -21,6 +22,11 @@ function tokenize(s) {
   while (i < n) {
     const c = s[i];
     if (word === null) {
+      if (c === "\n") {
+        tokens.push({ type: "op", value: "\n" });
+        i++;
+        continue;
+      }
       if (/\s/.test(c)) {
         i++;
         continue;
@@ -42,6 +48,10 @@ function tokenize(s) {
       }
       word = "";
       continue; // reprocess c now that a word has started
+    }
+    if (c === "\n") {
+      flush();
+      continue;
     }
     if (/\s/.test(c)) {
       flush();

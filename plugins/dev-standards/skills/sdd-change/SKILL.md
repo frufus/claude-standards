@@ -32,7 +32,8 @@ hook, or the next session, say where a change is without asking.
    completes — the commit-message and cadence rules live in the global
    CLAUDE.md. After each task: tick it in `tasks.md`, append a log line
    with the commit subject, update `Current:`.
-   Produces: one commit per task; `tasks.md` ticked; `progress.md` current.
+   Produces: one commit per task; `tasks.md` ticked; `progress.md` current
+   with `Status: in-progress`.
 5. **Record decisions.** Anything that outlives the change becomes an ADR
    — invoke the `adr` skill.
    Produces: `docs/adr/NNNN-title.md`, linked from `proposal.md`.
@@ -55,7 +56,11 @@ hook, or the next session, say where a change is without asking.
 9. **Archive.** `scripts/dev down` if the server is up, then
    `openspec archive <change-id>` folds the spec deltas into the
    capability specs. The specification is now current because the work
-   finished, not because someone remembered to update it.
+   finished, not because someone remembered to update it. If an earlier
+   archive attempt failed, remove the stale
+   `openspec/changes/archive/.openspec-archive.lock` before retrying.
+   After archiving, replace the `Purpose: TBD` the archiver writes into a
+   newly created capability spec.
    Produces: the change, with `progress.md` and `verification.md`, under
    `openspec/changes/archive/`.
 

@@ -17,9 +17,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib/paths.sh"
 
 input=$(cat)
-IFS=$'\t' read -r command_line cwd < <(
-    printf '%s' "$input" | node "$HERE/lib/json-fields.js" tool_input.command cwd 2>/dev/null
-)
+command_line=$(printf '%s' "$input" | node "$HERE/lib/json-fields.js" --raw tool_input.command 2>/dev/null)
+cwd=$(printf '%s' "$input" | node "$HERE/lib/json-fields.js" cwd 2>/dev/null)
 [ -n "${command_line:-}" ] || exit 0
 [ -n "${cwd:-}" ] || exit 0
 
@@ -34,6 +33,7 @@ case "$kind" in
     push)    action="push" ;;
     pr)      action="open a pull request" ;;
     archive) action="archive" ;;
+    *)       exit 0 ;;
 esac
 
 missing=""

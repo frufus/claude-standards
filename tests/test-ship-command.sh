@@ -7,6 +7,7 @@ check "gh pr create is a pr"                  "$(kind 'gh pr create --fill')" "p
 check "openspec archive is an archive"        "$(kind 'openspec archive 2026-09-05-x')" "archive"
 check "a ship command after && is recognised" "$(kind 'git add -A && git push')" "push"
 check "a ship command after ; is recognised"  "$(kind 'cd /x; gh pr create')" "pr"
+check "a ship command on its own line is recognised" "$(kind "$(printf 'git add -A\ngit push')")" "push"
 check "git status is nothing"                 "$(kind 'git status')" ""
 check "openspec list is nothing"              "$(kind 'openspec list --json')" ""
 check "gh pr view is nothing"                 "$(kind 'gh pr view 12')" ""

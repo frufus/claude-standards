@@ -206,8 +206,8 @@ prescribes.
 bash tests/run-tests.sh
 ```
 
-278 checks over the manifests, both helper libraries, all four hooks, all five
-skills, the script templates and every template. The suite asserts the
+292 checks over the manifests, both helper libraries, all four hooks, all five
+skills, the script templates and every other template. The suite asserts the
 *content* of the skills and templates, not merely that the files exist — so a
 skill that stops prescribing the design system, or a template that grows fat,
 fails the build.

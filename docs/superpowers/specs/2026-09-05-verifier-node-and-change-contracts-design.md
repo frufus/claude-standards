@@ -91,8 +91,9 @@ says was done.
 
 The verifier:
 
-1. Runs `scripts/verify`. A non-zero exit is a finding; the run stops there
-   only if nothing else can be exercised.
+1. Runs `openspec validate <id> --strict`, then `scripts/verify`. A non-zero
+   exit from either is a finding; the run stops there only if nothing else
+   can be exercised.
 2. For every scenario in the deltas — happy and unhappy — drives it against the
    running application (`scripts/dev` for a `web` project; the CLI, module or
    test entry point for `python`) and records a verdict: **pass**, **fail**,
@@ -258,8 +259,8 @@ The always-loaded layer is the only place that is true.
 ### 4.6 A ship check, reporting
 
 A new hook, `check-ship.sh`, on `PreToolUse` for `Bash`, alongside the commit
-check. It reads the command; when it is `gh pr create`, `git push` to a
-`claude/` branch, or `openspec archive`, and the project has a change in
+check. It reads the command; when it is `gh pr create`, `git push`, or
+`openspec archive`, and the project has a change in
 flight whose `verification.md` is absent or contains an unanswered finding, it
 emits a reminder naming the change and the missing artefact. It never denies.
 

@@ -46,8 +46,10 @@ Scenarios to verify — every one, including the unhappy paths:
 <the contents of openspec/changes/<id>/specs/, verbatim>
 
 Tools:
+- `openspec validate <id> --strict` checks the change's own artefacts. Run it
+  first. A non-zero exit is a finding.
 - `scripts/verify` runs lint, typecheck, unit and end-to-end checks in
-  order and exits non-zero at the first failure. Run it first. A failure
+  order and exits non-zero at the first failure. Run it next. A failure
   is a finding; continue to the scenarios unless nothing can run.
 - `scripts/dev` brings the application up and prints its URL (or entry
   point) on the last line. It is idempotent. Run `scripts/dev down` when

@@ -35,9 +35,11 @@ the toolchain for the life of the project.
 5. **Create `docs/adr/`** with a `.gitkeep`.
 
 6. **Write `scripts/`** from `${CLAUDE_PLUGIN_ROOT}/templates/<profile>/scripts/`:
-   copy `dev` and `verify` verbatim, then `chmod +x scripts/dev scripts/verify`
-   and `git update-index --chmod=+x scripts/dev scripts/verify` — git on
-   Windows does not record the mode from the filesystem. Write a
+   copy `dev` and `verify` verbatim, then `chmod +x scripts/dev scripts/verify`,
+   `git add scripts/dev scripts/verify` and
+   `git update-index --chmod=+x scripts/dev scripts/verify` — the index
+   entry must exist before its mode can be set, and git on Windows does
+   not record the mode from the filesystem. Write a
    `.gitattributes` in the project root containing `scripts/* text eol=lf`
    and `*.sh text eol=lf` — Git for Windows checks text out with CRLF by
    default, and bash refuses a script whose shebang ends in a carriage
@@ -55,9 +57,9 @@ the toolchain for the life of the project.
    unless the ADR described under that profile says otherwise. Set
    `reuseExistingServer: true` in `playwright.config.ts` so Playwright
    and `scripts/dev` agree about the server. Configure Vitest with
-   `exclude: ["e2e/**", "node_modules/**"]` in `vite.config.ts` (import
-   `defineConfig` from `vitest/config`), so the Playwright specs are run
-   by the e2e step only.
+   `exclude: [...configDefaults.exclude, "e2e/**"]` in `vite.config.ts`
+   (import `defineConfig` and `configDefaults` from `vitest/config`), so
+   the Playwright specs are run by the e2e step only.
 
 8. **Verify**: run `scripts/verify`. It must run to the end — an empty
    suite that runs is fine, a suite that cannot run is not.

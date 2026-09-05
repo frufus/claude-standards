@@ -19,6 +19,7 @@ contains "reports on gh pr create too"               "$(ship "$p" "gh pr create 
 contains "reports on openspec archive too"           "$(ship "$p" "openspec archive 2026-09-05-thing")" "verification.md"
 check "silent on a non-ship command"                 "$(ship "$p" "git status")" ""
 check "silent when git push is only quoted text"     "$(ship "$p" "echo git push")" ""
+contains "a push on the second line of a command is still checked" "$(ship "$p" 'git add -A\ngit push')" "verification.md"
 
 # From a nested cwd the project is still found.
 mkdir -p "$p/src/deep"
