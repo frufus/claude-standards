@@ -80,17 +80,18 @@ recorded as such.
    otherwise runs on the machine a python project is developed on
    (native Windows, via pip in this spike); the bound is about a run
    that finishes in 5 minutes, not one that needs a different OS to run
-   at all. This decision is about the tool's platform support, not
-   `uv` — record it separately from the pip note above; a future retrial
-   under WSL, or of an alternative mutation tool with native Windows
-   support, is what would overturn it.
+   at all. This decision is about the tool's platform support and not
+   about `uv`: the pip note above concerns how the spike measured
+   installs, and has no bearing on mutmut's refusal to start. A future
+   retrial under WSL, or of an alternative mutation tool with native
+   Windows support, is what would overturn it.
 
 ## Consequences
 
 - Both adopted fitness steps land in their profile's `scripts/verify`
-  immediately after `typecheck`: `run fitness npx depcruise src
-  --config .dependency-cruiser.cjs` (web) and `run fitness uv run
-  lint-imports` (python) — cheap enough (3.9 s and 0.3 s here) that they
+  immediately after `typecheck`: a `run fitness` step calling `npx
+  depcruise src --config .dependency-cruiser.cjs` (web, through the
+  `fitness()` wrapper below) and `uv run lint-imports` (python) — cheap enough (3.9 s and 0.3 s here) that they
   cost little ahead of the unit step they now precede.
 - Web's `scripts/verify --deep` adds a mutation step whose cost grows
   with the codebase; 10 seconds on 4 files here is not a projection for
@@ -100,8 +101,22 @@ recorded as such.
   exact failure mode this spike seeded — currently goes uncaught in
   python projects built on this profile until mutmut runs on Windows,
   WSL is adopted as a project dependency, or another candidate is
-  trialed; this is a real gap against ADR-0002's asymmetric-cost
-  reasoning, and it should be revisited rather than left implicit.
+  trialed; this is a real gap against the spec's verification goal, and
+  it should be revisited rather than left implicit.
+- Both sensors have a way of passing while proving nothing, and both are
+  answered here rather than left to the session that hits them.
+  dependency-cruiser cruises **no TypeScript modules at all** on a
+  TypeScript newer than it supports, and still exits 0: the compatibility
+  measure is the `typescript@^6` pin `new-project` step 8 installs, and
+  the safeguard behind it is the `fitness()` function in
+  `templates/web/scripts/verify`, which reads the run's output and fails
+  the step when it says `Support for typescript@` or `0 modules`. The
+  safeguard goes inert on its own once that notice disappears. Stryker,
+  symmetrically, reports survivors and exits 0 unless a break threshold
+  exists, so `stryker.config.json` ships `"break": 50` — a floor, not a
+  target: a project raises it in its own config as its suite earns it,
+  and the spike's deliberately weak test, which scores 0 %, must fail it.
+
 - The python install numbers above (18.6 seconds for three packages via
   pip) are not what `uv` would report; the profile's `scripts/verify`
   still invokes `uv run lint-imports`, so a project built on this

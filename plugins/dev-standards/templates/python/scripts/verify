@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 # Lint, format check, typecheck, fitness, unit tests — in that order,
 # stopping at the first failure. The exit status is the verdict. Takes
-# no arguments.
+# no arguments; anything passed is a usage error (exit 2) rather than a
+# silently ignored one, so a `--deep` borrowed from the web profile says
+# so instead of reading as a green deep run.
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
+[ $# -eq 0 ] || { echo "usage: scripts/verify" >&2; exit 2; }
 
 run() { # label command...
     local label="$1"; shift

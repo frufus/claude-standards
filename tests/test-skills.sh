@@ -45,6 +45,16 @@ contains "new-project writes AGENTS.md"            "$np" "templates/<profile>/AG
 contains "new-project imports it from CLAUDE.md"   "$np" "@AGENTS.md"
 contains "new-project writes the PR template" "$np" "pull_request_template.md"
 
+# Step 8 installs the sensors rather than expecting their configs to
+# appear: a step that expects a file is a step that silently does not run.
+contains "new-project installs dependency-cruiser"   "$np" "dependency-cruiser"
+contains "new-project installs the Stryker runner"   "$np" "@stryker-mutator/vitest-runner"
+contains "new-project installs import-linter"        "$np" "import-linter"
+contains "new-project pins TypeScript to 6"          "$np" "typescript@^6"
+contains "new-project copies the fitness config"     "$np" ".dependency-cruiser.cjs"
+contains "new-project copies the mutation config"    "$np" "stryker.config.json"
+contains "new-project appends the import-linter table" "$np" "importlinter.fragment.toml"
+
 vf=$(cat "$S/verify/SKILL.md" 2>/dev/null)
 contains "verify runs in a fresh sub-agent"         "$vf" "fresh sub-agent"
 contains "verify withholds the diff"                "$vf" "not the diff"

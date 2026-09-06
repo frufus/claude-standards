@@ -29,7 +29,7 @@ web=$(cat "$T/web/scripts/verify" 2>/dev/null)
 contains "web verify brings the dev server up for e2e" "$web" "scripts/dev up"
 contains "web verify takes the server down again"      "$web" "scripts/dev down"
 contains "web verify stops at the first failure"       "$web" "exit 1"
-contains "web verify offers a deep mode"               "$web" "--deep"
+contains "web verify gates mutation behind deep"       "$web" 'if [ "$deep" -eq 1 ]'
 
 # Under Git Bash a background job's pid is an MSYS pid that taskkill does
 # not know, and netstat's state column is localised. The listener is found

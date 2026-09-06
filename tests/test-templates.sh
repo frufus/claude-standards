@@ -22,6 +22,29 @@ for p in web python; do
     check "$p CLAUDE.md stays thin" "$([ "$lines" -le 40 ] && echo ok)" "ok"
 done
 
+# The sensor configs are templates, not prose in a skill: step 8 copies
+# them, so a project gets the rule ADR-0003 adopted rather than whatever
+# a session invents on the day.
+dc=$(cat "$T/web/.dependency-cruiser.cjs" 2>/dev/null)
+contains "web fitness config states the one rule"   "$dc" "components-do-not-touch-repositories"
+contains "web fitness config forbids the direction" "$dc" '^src/components'
+contains "web fitness config names the forbidden target" "$dc" '^src/repositories'
+contains "web fitness config sees TypeScript imports" "$dc" "tsPreCompilationDeps"
+dclines=$(wc -l < "$T/web/.dependency-cruiser.cjs" 2>/dev/null || echo 999)
+check "web fitness config stays under the 20-line bound" "$([ "$dclines" -le 20 ] && echo ok)" "ok"
+
+st=$(cat "$T/web/stryker.config.json" 2>/dev/null)
+contains "stryker config runs vitest"        "$st" '"testRunner": "vitest"'
+contains "stryker config has a break floor"  "$st" '"break": 50'
+check "stryker config is valid JSON" \
+  "$(node -e 'JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));console.log("ok")' "$T/web/stryker.config.json" 2>/dev/null)" "ok"
+
+il=$(cat "$T/python/importlinter.fragment.toml" 2>/dev/null)
+contains "python fitness fragment declares the table" "$il" "[tool.importlinter]"
+contains "python fitness fragment names a contract"   "$il" "[[tool.importlinter.contracts]]"
+contains "python fitness fragment forbids the direction" "$il" "<package>.adapters"
+contains "python fitness fragment leaves the package to fill in" "$il" "root_package = \"<package>\""
+
 contains "shared rules cover proposals" "$(cat "$T/shared/config.rules.yaml" 2>/dev/null)" "proposal:"
 contains "shared rules cover specs"     "$(cat "$T/shared/config.rules.yaml" 2>/dev/null)" "specs:"
 contains "shared rules cover tasks"     "$(cat "$T/shared/config.rules.yaml" 2>/dev/null)" "tasks:"

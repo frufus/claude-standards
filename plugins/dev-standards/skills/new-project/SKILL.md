@@ -71,13 +71,21 @@ the toolchain for the life of the project.
    and `scripts/dev` agree about the server. Configure Vitest with
    `exclude: [...configDefaults.exclude, "e2e/**"]` in `vite.config.ts`
    (import `defineConfig` and `configDefaults` from `vitest/config`), so
-   the Playwright specs are run by the e2e step only. `scripts/verify`'s
-   `fitness` step expects dependency-cruiser's rules in
-   `.dependency-cruiser.cjs` at the project root, and its `--deep`
-   mutation step expects Stryker's config in `stryker.config.json`
-   there too (see ADR-0003). On `python`, the `fitness` step expects
-   import-linter's contracts in the `[tool.importlinter]` table of
-   `pyproject.toml` (see ADR-0003; python has no mutation step yet).
+   the Playwright specs are run by the e2e step only.
+
+   Then install the sensors ADR-0003 adopted, so `scripts/verify`'s
+   `fitness` and `--deep` mutation steps have something to run. On `web`:
+   `npm install -D dependency-cruiser @stryker-mutator/core
+   @stryker-mutator/vitest-runner`, then copy
+   `${CLAUDE_PLUGIN_ROOT}/templates/web/.dependency-cruiser.cjs` and
+   `${CLAUDE_PLUGIN_ROOT}/templates/web/stryker.config.json` verbatim into
+   the project root. Pin TypeScript with `npm install -D typescript@^6`:
+   dependency-cruiser cruises no TypeScript modules at all on 7, and the
+   `fitness` step would then pass while proving nothing (ADR-0003). On
+   `python`, add `import-linter` to the dev dependencies and append
+   `${CLAUDE_PLUGIN_ROOT}/templates/python/importlinter.fragment.toml` to
+   `pyproject.toml`, replacing `<package>` with the real package name;
+   python has no mutation step yet (ADR-0003).
 
 9. **Verify**: run `scripts/verify`. It must run to the end — an empty
    suite that runs is fine, a suite that cannot run is not.
@@ -96,7 +104,9 @@ Pinia for ephemeral UI state only; persistent data goes through a
 repository layer. vue-router. i18n from the first UI change, with no
 hardcoded user-facing strings. Vitest for units, Playwright for a thin
 end-to-end layer. ESLint and Prettier. `vue-tsc` for typechecking.
-Default posture: no backend, no secrets in the bundle, no external CDNs,
+`dependency-cruiser` for the architecture-fitness step and Stryker (with
+`@stryker-mutator/vitest-runner`) for the `--deep` mutation step, on
+`typescript@^6` (ADR-0003). Default posture: no backend, no secrets in the bundle, no external CDNs,
 fonts or analytics.
 
 **The user interface is built on `@frufus/design-system`.** Install it and
@@ -117,8 +127,9 @@ decides where the component belongs before anything is built.
 ## Profile `python`
 
 `uv` for dependencies and environments. `ruff` for both linting and
-formatting. `mypy` in strict mode. `pytest`. A Dockerfile where the
-project is deployed.
+formatting. `mypy` in strict mode. `pytest`. `import-linter` for the
+architecture-fitness step, contracts in `pyproject.toml`; no mutation
+sensor yet (ADR-0003). A Dockerfile where the project is deployed.
 
 ## The rule above both profiles
 
