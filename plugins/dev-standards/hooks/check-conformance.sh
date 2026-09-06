@@ -35,6 +35,13 @@ if grep -qE '^profile:[[:space:]]*(web|python)[[:space:]]*$' "$cwd/openspec/conf
     add "no \`scripts/verify\` — the verifier has no deterministic check to run. Copy \`scripts/dev\` and \`scripts/verify\` from the profile template (the \`new-project\` skill, step 6)."
 fi
 
+# Every agent that is not Claude Code reads AGENTS.md and nothing else of
+# ours. A profiled project without it is invisible to them.
+if grep -qE '^profile:[[:space:]]*(web|python)[[:space:]]*$' "$cwd/openspec/config.yaml" 2>/dev/null &&
+    [ ! -f "$cwd/AGENTS.md" ]; then
+    add "no \`AGENTS.md\` — agents other than Claude Code read nothing else. Write it from the profile template (the \`new-project\` skill, step 4) and make \`CLAUDE.md\` start with \`@AGENTS.md\`."
+fi
+
 # The web profile builds its interface on the shared design system. Reported
 # only once there is a package.json to depend on it - before that the project
 # has no toolchain yet and the reminder would be noise - and never when an ADR

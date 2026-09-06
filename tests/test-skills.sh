@@ -41,6 +41,8 @@ contains "new-project stages the scripts before chmod" "$np" "git add scripts/de
 contains "new-project gitignores the dev pidfile" "$np" ".dev.pid"
 contains "new-project keeps the scripts LF on clone"   "$np" "scripts/* text eol=lf"
 contains "new-project keeps Playwright specs out of Vitest" "$np" 'configDefaults.exclude, "e2e/**"'
+contains "new-project writes AGENTS.md"            "$np" "templates/<profile>/AGENTS.md"
+contains "new-project imports it from CLAUDE.md"   "$np" "@AGENTS.md"
 
 vf=$(cat "$S/verify/SKILL.md" 2>/dev/null)
 contains "verify runs in a fresh sub-agent"         "$vf" "fresh sub-agent"

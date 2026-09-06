@@ -4,10 +4,20 @@ for p in web python; do
     f="$T/$p/config.fragment.yaml"
     contains "$p fragment declares the schema" "$(cat "$f" 2>/dev/null)" "schema: spec-driven"
     contains "$p fragment declares its profile" "$(cat "$f" 2>/dev/null)" "profile: $p"
-    contains "$p CLAUDE.md points at the config" \
-      "$(cat "$T/$p/CLAUDE.md" 2>/dev/null)" "openspec/config.yaml"
-    # The thin-CLAUDE.md rule from spec section 4.2: orientation only.
-    # A template that grows rules is the duplication the standard removes.
+    # AGENTS.md is the instruction file every tool reads; CLAUDE.md is an
+    # import plus Claude-only notes. The config pointer and the commands
+    # therefore live in AGENTS.md, and CLAUDE.md must start with the import.
+    a=$(cat "$T/$p/AGENTS.md" 2>/dev/null)
+    contains "$p AGENTS.md points at the config" "$a" "openspec/config.yaml"
+    contains "$p AGENTS.md says work starts as a proposal" "$a" "change proposal"
+    contains "$p AGENTS.md names the always boundary" "$a" "- Always:"
+    contains "$p AGENTS.md names the ask boundary"    "$a" "- Ask:"
+    contains "$p AGENTS.md names the never boundary"  "$a" "- Never:"
+    contains "$p AGENTS.md carries the test ratchet"  "$a" "weaken a test"
+    alines=$(wc -l < "$T/$p/AGENTS.md" 2>/dev/null || echo 999)
+    check "$p AGENTS.md stays within its budget" "$([ "$alines" -le 60 ] && echo ok)" "ok"
+    check "$p CLAUDE.md imports AGENTS.md on its first line" "$(head -n 1 "$T/$p/CLAUDE.md" 2>/dev/null)" "@AGENTS.md"
+    not_contains "$p CLAUDE.md does not repeat the commands" "$(cat "$T/$p/CLAUDE.md" 2>/dev/null)" "scripts/verify"
     lines=$(wc -l < "$T/$p/CLAUDE.md" 2>/dev/null || echo 999)
     check "$p CLAUDE.md stays thin" "$([ "$lines" -le 40 ] && echo ok)" "ok"
 done
@@ -35,11 +45,11 @@ contains "web template forbids redeclaring its values" "$web" "redeclare"
 contains "web template points at the component skill" "$web" "component"
 
 # The scripts are the first thing a session should reach for, so they
-# come first in the Commands block of both profiles.
+# come first in the Commands block of both AGENTS.md files.
 for p in web python; do
-    first=$(awk '/^```/{f=!f; next} f{print; exit}' "$T/$p/CLAUDE.md" 2>/dev/null)
-    contains "$p CLAUDE.md lists scripts/verify first" "$first" "scripts/verify"
-    contains "$p CLAUDE.md lists scripts/dev"  "$(cat "$T/$p/CLAUDE.md" 2>/dev/null)" "scripts/dev"
+    first=$(awk '/^```/{f=!f; next} f{print; exit}' "$T/$p/AGENTS.md" 2>/dev/null)
+    contains "$p AGENTS.md lists scripts/verify first" "$first" "scripts/verify"
+    contains "$p AGENTS.md lists scripts/dev"  "$(cat "$T/$p/AGENTS.md" 2>/dev/null)" "scripts/dev"
 done
 
 rules=$(cat "$T/shared/config.rules.yaml" 2>/dev/null)

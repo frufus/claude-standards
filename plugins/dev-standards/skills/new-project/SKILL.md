@@ -27,10 +27,14 @@ the toolchain for the life of the project.
      belongs here and nowhere else.
    - `${CLAUDE_PLUGIN_ROOT}/templates/shared/config.rules.yaml` verbatim.
 
-4. **Write `CLAUDE.md`** from
+4. **Write `AGENTS.md` and `CLAUDE.md`** from
+   `${CLAUDE_PLUGIN_ROOT}/templates/<profile>/AGENTS.md` and
    `${CLAUDE_PLUGIN_ROOT}/templates/<profile>/CLAUDE.md`, filling the
-   one-line description. Keep it thin: orientation, commands, directories.
-   Rules belong in `openspec/config.yaml`, never in both.
+   one-line description in `AGENTS.md`. `AGENTS.md` is what Codex, Cursor,
+   Copilot and every other agent read; `CLAUDE.md` begins with `@AGENTS.md`
+   so Claude Code reads the same file, and holds only what is
+   Claude-specific. Keep both thin: orientation, commands, directories,
+   boundaries. Rules belong in `openspec/config.yaml`, never in either.
 
 5. **Create `docs/adr/`** with a `.gitkeep`.
 

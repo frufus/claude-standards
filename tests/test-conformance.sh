@@ -17,6 +17,7 @@ full=$(mktemp -d)
 mkdir -p "$full/openspec" "$full/docs/adr" "$full/scripts"
 printf 'schema: spec-driven\nprofile: web\n' > "$full/openspec/config.yaml"
 printf '# CLAUDE.md\n' > "$full/CLAUDE.md"
+printf '@AGENTS.md\n' > "$full/AGENTS.md"
 printf '#!/usr/bin/env bash\n' > "$full/scripts/verify"
 out=$(printf '{"cwd":"%s"}' "$full" | bash "$HOOK" 2>/dev/null)
 check "a conforming project produces no output" "$out" ""
@@ -54,6 +55,8 @@ profile: web
 ' > "$withds/openspec/config.yaml"
 printf '# CLAUDE.md
 ' > "$withds/CLAUDE.md"
+printf '@AGENTS.md
+' > "$withds/AGENTS.md"
 printf '#!/usr/bin/env bash
 ' > "$withds/scripts/verify"
 printf '{"dependencies":{"@frufus/design-system":"^0.1.0"}}' > "$withds/package.json"
@@ -68,6 +71,8 @@ profile: web
 ' > "$optout/openspec/config.yaml"
 printf '# CLAUDE.md
 ' > "$optout/CLAUDE.md"
+printf '@AGENTS.md
+' > "$optout/AGENTS.md"
 printf '#!/usr/bin/env bash
 ' > "$optout/scripts/verify"
 printf '{"name":"x"}' > "$optout/package.json"
@@ -84,6 +89,8 @@ profile: web
 ' > "$early/openspec/config.yaml"
 printf '# CLAUDE.md
 ' > "$early/CLAUDE.md"
+printf '@AGENTS.md
+' > "$early/AGENTS.md"
 printf '#!/usr/bin/env bash
 ' > "$early/scripts/verify"
 out=$(printf '{"cwd":"%s"}' "$early" | bash "$HOOK" 2>/dev/null)
@@ -97,6 +104,8 @@ profile: python
 ' > "$py/openspec/config.yaml"
 printf '# CLAUDE.md
 ' > "$py/CLAUDE.md"
+printf '@AGENTS.md
+' > "$py/AGENTS.md"
 printf '#!/usr/bin/env bash
 ' > "$py/scripts/verify"
 printf '{"name":"x"}' > "$py/package.json"
@@ -112,6 +121,8 @@ profile: web
 ' > "$itself/openspec/config.yaml"
 printf '# CLAUDE.md
 ' > "$itself/CLAUDE.md"
+printf '@AGENTS.md
+' > "$itself/AGENTS.md"
 printf '#!/usr/bin/env bash
 ' > "$itself/scripts/verify"
 printf '{"name":"@frufus/design-system","version":"0.1.0"}' > "$itself/package.json"
@@ -139,6 +150,8 @@ profile: web
 ' > "$dev/openspec/config.yaml"
 printf '# CLAUDE.md
 ' > "$dev/CLAUDE.md"
+printf '@AGENTS.md
+' > "$dev/AGENTS.md"
 printf '#!/usr/bin/env bash
 ' > "$dev/scripts/verify"
 printf '{"devDependencies":{"@frufus/design-system":"^0.1.0"}}' > "$dev/package.json"
@@ -172,4 +185,20 @@ contains "reports a profiled project without scripts/verify" "$out" "scripts/ver
 not_contains "an unprofiled project is not asked for scripts" \
   "$(printf '{"cwd":"%s"}' "$noprofile" | bash "$HOOK" 2>/dev/null)" "scripts/verify"
 
-rm -rf "$bare" "$full" "$noprofile" "$nods" "$withds" "$optout" "$early" "$py"   "$itself" "$mention" "$dev" "$broken" "$noscript"
+# A profiled project without AGENTS.md is invisible to every agent that is
+# not Claude Code. Reported once, like the scripts.
+noagents=$(mktemp -d)
+mkdir -p "$noagents/openspec" "$noagents/docs/adr" "$noagents/scripts"
+printf 'schema: spec-driven
+profile: python
+' > "$noagents/openspec/config.yaml"
+printf '# CLAUDE.md
+' > "$noagents/CLAUDE.md"
+printf '#!/usr/bin/env bash
+' > "$noagents/scripts/verify"
+out=$(printf '{"cwd":"%s"}' "$noagents" | bash "$HOOK" 2>/dev/null)
+contains "reports a profiled project without AGENTS.md" "$out" "AGENTS.md"
+not_contains "an unprofiled project is not asked for AGENTS.md" \
+  "$(printf '{"cwd":"%s"}' "$noprofile" | bash "$HOOK" 2>/dev/null)" "AGENTS.md"
+
+rm -rf "$bare" "$full" "$noprofile" "$nods" "$withds" "$optout" "$early" "$py"   "$itself" "$mention" "$dev" "$broken" "$noscript" "$noagents"
