@@ -56,7 +56,14 @@ the toolchain for the life of the project.
    order and exits non-zero at the first failure. The `verify` skill
    runs both; a session never composes those steps by hand.
 
-7. **Install the toolchain** for the profile. On `web` this includes
+7. **Write `.github/pull_request_template.md`** from
+   `${CLAUDE_PLUGIN_ROOT}/templates/shared/pull_request_template.md`,
+   verbatim. It asks for intent, the change id, the verification report,
+   proof, which parts were agent-written and their risk tier, and where
+   human attention is wanted — so what reaches a reviewer does not depend
+   on the session that opened the pull request.
+
+8. **Install the toolchain** for the profile. On `web` this includes
    `@frufus/design-system`, wired with the four CSS lines it documents,
    unless the ADR described under that profile says otherwise. Set
    `reuseExistingServer: true` in `playwright.config.ts` so Playwright
@@ -65,13 +72,13 @@ the toolchain for the life of the project.
    (import `defineConfig` and `configDefaults` from `vitest/config`), so
    the Playwright specs are run by the e2e step only.
 
-8. **Verify**: run `scripts/verify`. It must run to the end — an empty
+9. **Verify**: run `scripts/verify`. It must run to the end — an empty
    suite that runs is fine, a suite that cannot run is not.
 
-9. **Confirm conformance**: the SessionStart conformance hook must report
-   nothing for this project. Start a session in it, or run
-   `bash "${CLAUDE_PLUGIN_ROOT}/hooks/check-conformance.sh"` with
-   `{"cwd":"<project>"}` on stdin and confirm the output is empty.
+10. **Confirm conformance**: the SessionStart conformance hook must report
+    nothing for this project. Start a session in it, or run
+    `bash "${CLAUDE_PLUGIN_ROOT}/hooks/check-conformance.sh"` with
+    `{"cwd":"<project>"}` on stdin and confirm the output is empty.
 
 ## Profile `web`
 

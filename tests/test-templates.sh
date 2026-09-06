@@ -55,3 +55,14 @@ done
 rules=$(cat "$T/shared/config.rules.yaml" 2>/dev/null)
 contains "shared rules update progress.md on apply"       "$rules" "progress.md"
 contains "shared rules require verification on archive"   "$rules" "verification.md"
+
+# What reaches a reviewer must not depend on the session. The template asks
+# for the four things the review literature agrees on.
+pr=$(cat "$T/shared/pull_request_template.md" 2>/dev/null)
+contains "PR template asks for intent"       "$pr" "## Intent"
+contains "PR template asks for proof"        "$pr" "## Proof"
+contains "PR template links verification"    "$pr" "verification.md"
+contains "PR template asks for provenance"   "$pr" "Agent-written"
+contains "PR template asks for a risk tier"  "$pr" "Risk tier"
+contains "PR template names the high tier"   "$pr" "untrusted input"
+contains "PR template asks where to look"    "$pr" "human attention"

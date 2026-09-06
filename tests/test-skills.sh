@@ -43,6 +43,7 @@ contains "new-project keeps the scripts LF on clone"   "$np" "scripts/* text eol
 contains "new-project keeps Playwright specs out of Vitest" "$np" 'configDefaults.exclude, "e2e/**"'
 contains "new-project writes AGENTS.md"            "$np" "templates/<profile>/AGENTS.md"
 contains "new-project imports it from CLAUDE.md"   "$np" "@AGENTS.md"
+contains "new-project writes the PR template" "$np" "pull_request_template.md"
 
 vf=$(cat "$S/verify/SKILL.md" 2>/dev/null)
 contains "verify runs in a fresh sub-agent"         "$vf" "fresh sub-agent"
