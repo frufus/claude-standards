@@ -7,7 +7,7 @@ ship() { # cwd command
 # A change in flight with no verification.md at all.
 p=$(mktemp -d)
 mkdir -p "$p/openspec/changes/2026-09-05-thing" "$p/openspec/changes/archive/old"
-printf '# Proposal\n' > "$p/openspec/changes/2026-09-05-thing/proposal.md"
+printf '# Proposal\n\n### Non-Goals\n- none\n' > "$p/openspec/changes/2026-09-05-thing/proposal.md"
 out=$(ship "$p" "git push -u origin claude/thing")
 contains "reports a push of an unverified change"    "$out" "2026-09-05-thing"
 contains "names the missing artefact"                "$out" "verification.md"
@@ -33,6 +33,21 @@ contains "reports an unanswered finding" "$out" "1 unanswered"
 # Once answered, silence.
 printf '# Verification\n\n### a — fail\nFinding: broke\nAnswer: fixed in fix: x\n' > "$p/openspec/changes/2026-09-05-thing/verification.md"
 check "silent once every finding is answered" "$(ship "$p" "git push")" ""
+
+# The proposal rules are checked at the same moment: when the work ships.
+q2=$(mktemp -d)
+mkdir -p "$q2/openspec/changes/2026-09-06-loose/specs/x"
+printf '# Proposal\n' > "$q2/openspec/changes/2026-09-06-loose/proposal.md"
+printf '### Requirement: R\n\n#### Scenario: only one\n- WHEN a\n- THEN b\n' > "$q2/openspec/changes/2026-09-06-loose/specs/x/spec.md"
+printf -- '- [ ] 1. Unverified task\n' > "$q2/openspec/changes/2026-09-06-loose/tasks.md"
+printf '# Verification\n\n### a — pass\n' > "$q2/openspec/changes/2026-09-06-loose/verification.md"
+out=$(ship "$q2" "git push")
+contains "reports a shipped proposal without Non-Goals"      "$out" "Non-Goals"
+contains "reports a requirement missing its unhappy path"   "$out" "unhappy path"
+contains "reports a task without a verification statement"  "$out" "Unverified task"
+contains "the lint lines name the change"                   "$out" "2026-09-06-loose"
+not_contains "the lint never denies"                        "$out" "permissionDecision"
+rm -rf "$q2"
 
 # No change in flight: nothing to say, whatever the command.
 q=$(mktemp -d)
