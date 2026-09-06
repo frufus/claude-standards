@@ -71,8 +71,20 @@ finding is settled with a test, not an argument.
 /plugin install dev-standards@claude-standards
 ```
 
-Releases are tagged. The current release is `v0.3.0`; check the
-marketplace clone out at that tag to pin it.
+Releases are tagged; the current release is `v0.3.0`. Claude Code has no
+flag for installing a marketplace at a tag, so pinning is a checkout in
+whichever clone the marketplace is read from — two routes:
+
+1. **Register this checkout as the marketplace.**
+   `/plugin marketplace add C:\Users\frufus\development\claude-standards`,
+   then `git checkout v0.3.0` in that directory. The plugin is loaded
+   from the working tree, so the tag you have checked out is the version
+   that runs.
+2. **Register the remote.** `/plugin marketplace add frufus/claude-standards`,
+   then `git checkout v0.3.0` inside the marketplace cache under
+   `~/.claude/plugins/marketplaces/claude-standards`. Note that
+   `/plugin marketplace update` pulls the branch again and moves you off
+   the tag.
 
 ## What you get
 
@@ -111,7 +123,7 @@ theory says cannot fail. Fresh context is the whole mechanism.
 
 | Event                       | What it does                                                                    |
 | --------------------------- | ------------------------------------------------------------------------------- |
-| `SessionStart`              | Reports which parts of the standard this project is missing — no `openspec/`, unprofiled, no `CLAUDE.md`, no `docs/adr/`, no design-system dependency in a web project. |
+| `SessionStart`              | Reports which parts of the standard this project is missing — no `openspec/`, unprofiled, no `CLAUDE.md`, no `docs/adr/`, no `AGENTS.md` or a `CLAUDE.md` that does not import it, no `scripts/verify`, no design-system dependency in a web project. |
 | `PreToolUse` on `Edit\|Write` | Reminds when a **source** file is edited with no OpenSpec change in flight.     |
 | `PreToolUse` on `Bash`      | Checks a `git commit -m` subject against Conventional Commits and the 72-character limit. |
 | `PreToolUse` on `Bash`      | **Denies** a force-push, hard reset, clean or branch force-delete until the human says otherwise (`CLAUDE_STANDARDS_ALLOW_DESTRUCTIVE=1`). The one exception; see ADR-0002. |
@@ -226,8 +238,9 @@ prescribes.
 bash tests/run-tests.sh
 ```
 
-406 checks over the manifests, both helper libraries, all five hooks,
-all five skills, the script templates and every other template. The suite asserts the
+476 checks over the manifests, the helper libraries, all five hooks,
+all five skills, the script templates — read, and the web `verify` run
+against stub executables — and every other template. The suite asserts the
 *content* of the skills and templates, not merely that the files exist — so a
 skill that stops prescribing the design system, or a template that grows fat,
 fails the build.

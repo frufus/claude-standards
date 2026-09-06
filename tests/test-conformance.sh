@@ -16,7 +16,7 @@ check "exits 0 on a non-conforming project" "$?" "0"
 full=$(mktemp -d)
 mkdir -p "$full/openspec" "$full/docs/adr" "$full/scripts"
 printf 'schema: spec-driven\nprofile: web\n' > "$full/openspec/config.yaml"
-printf '# CLAUDE.md\n' > "$full/CLAUDE.md"
+printf '@AGENTS.md\n' > "$full/CLAUDE.md"
 printf '@AGENTS.md\n' > "$full/AGENTS.md"
 printf '#!/usr/bin/env bash\n' > "$full/scripts/verify"
 out=$(printf '{"cwd":"%s"}' "$full" | bash "$HOOK" 2>/dev/null)
@@ -53,7 +53,7 @@ mkdir -p "$withds/openspec" "$withds/docs/adr" "$withds/scripts"
 printf 'schema: spec-driven
 profile: web
 ' > "$withds/openspec/config.yaml"
-printf '# CLAUDE.md
+printf '@AGENTS.md
 ' > "$withds/CLAUDE.md"
 printf '@AGENTS.md
 ' > "$withds/AGENTS.md"
@@ -69,7 +69,7 @@ mkdir -p "$optout/openspec" "$optout/docs/adr" "$optout/scripts"
 printf 'schema: spec-driven
 profile: web
 ' > "$optout/openspec/config.yaml"
-printf '# CLAUDE.md
+printf '@AGENTS.md
 ' > "$optout/CLAUDE.md"
 printf '@AGENTS.md
 ' > "$optout/AGENTS.md"
@@ -87,7 +87,7 @@ mkdir -p "$early/openspec" "$early/docs/adr" "$early/scripts"
 printf 'schema: spec-driven
 profile: web
 ' > "$early/openspec/config.yaml"
-printf '# CLAUDE.md
+printf '@AGENTS.md
 ' > "$early/CLAUDE.md"
 printf '@AGENTS.md
 ' > "$early/AGENTS.md"
@@ -102,7 +102,7 @@ mkdir -p "$py/openspec" "$py/docs/adr" "$py/scripts"
 printf 'schema: spec-driven
 profile: python
 ' > "$py/openspec/config.yaml"
-printf '# CLAUDE.md
+printf '@AGENTS.md
 ' > "$py/CLAUDE.md"
 printf '@AGENTS.md
 ' > "$py/AGENTS.md"
@@ -119,7 +119,7 @@ mkdir -p "$itself/openspec" "$itself/docs/adr" "$itself/scripts"
 printf 'schema: spec-driven
 profile: web
 ' > "$itself/openspec/config.yaml"
-printf '# CLAUDE.md
+printf '@AGENTS.md
 ' > "$itself/CLAUDE.md"
 printf '@AGENTS.md
 ' > "$itself/AGENTS.md"
@@ -148,7 +148,7 @@ mkdir -p "$dev/openspec" "$dev/docs/adr" "$dev/scripts"
 printf 'schema: spec-driven
 profile: web
 ' > "$dev/openspec/config.yaml"
-printf '# CLAUDE.md
+printf '@AGENTS.md
 ' > "$dev/CLAUDE.md"
 printf '@AGENTS.md
 ' > "$dev/AGENTS.md"
@@ -201,4 +201,16 @@ contains "reports a profiled project without AGENTS.md" "$out" "AGENTS.md"
 not_contains "an unprofiled project is not asked for AGENTS.md" \
   "$(printf '{"cwd":"%s"}' "$noprofile" | bash "$HOOK" 2>/dev/null)" "AGENTS.md"
 
-rm -rf "$bare" "$full" "$noprofile" "$nods" "$withds" "$optout" "$early" "$py"   "$itself" "$mention" "$dev" "$broken" "$noscript" "$noagents"
+# AGENTS.md present but not imported is the failure the import exists to
+# prevent: two files, two lists of commands, drifting apart.
+noimport=$(mktemp -d)
+mkdir -p "$noimport/openspec" "$noimport/docs/adr" "$noimport/scripts"
+printf 'schema: spec-driven\nprofile: python\n' > "$noimport/openspec/config.yaml"
+printf '# CLAUDE.md\n' > "$noimport/CLAUDE.md"
+printf '# AGENTS.md\n' > "$noimport/AGENTS.md"
+printf '#!/usr/bin/env bash\n' > "$noimport/scripts/verify"
+out=$(printf '{"cwd":"%s"}' "$noimport" | bash "$HOOK" 2>/dev/null)
+contains "reports a CLAUDE.md that does not import AGENTS.md" "$out" "does not import"
+not_contains "and does not also claim AGENTS.md is missing"   "$out" "no \`AGENTS.md\`"
+
+rm -rf "$bare" "$full" "$noprofile" "$nods" "$withds" "$optout" "$early" "$py"   "$itself" "$mention" "$dev" "$broken" "$noscript" "$noagents" "$noimport"

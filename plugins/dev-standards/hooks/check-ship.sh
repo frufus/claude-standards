@@ -60,9 +60,7 @@ for dir in "$root"/openspec/changes/*/; do
     if [ -n "$lint" ]; then
         while IFS= read -r line; do
             [ -n "$line" ] && add "\`$id\`: $line"
-        done <<EOF
-$lint
-EOF
+        done <<< "$lint"
     fi
 done
 

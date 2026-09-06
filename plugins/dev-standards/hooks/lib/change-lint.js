@@ -35,6 +35,20 @@ function specFiles(dir) {
   return found;
 }
 
+// A spec delta is a set of `## ADDED|MODIFIED|REMOVED|RENAMED
+// Requirements` sections. The requirement headings under REMOVED and
+// RENAMED name requirements that are going away; they carry no scenarios
+// by construction, so the unhappy-path rule does not reach them.
+function sections(text) {
+  const parts = text.split(/^## /m);
+  const out = [{ heading: "", body: parts[0] }];
+  for (const part of parts.slice(1)) {
+    const nl = part.indexOf("\n");
+    out.push({ heading: nl === -1 ? part : part.slice(0, nl), body: part });
+  }
+  return out;
+}
+
 function lint(dir) {
   const findings = [];
 
@@ -46,23 +60,29 @@ function lint(dir) {
   for (const file of specFiles(path.join(dir, "specs"))) {
     const text = read(file);
     if (text === null) continue;
-    for (const block of text.split(/^### Requirement:/m).slice(1)) {
-      const name = block.split(/\r?\n/)[0].trim();
-      const scenarios = (block.match(/^#### Scenario:/gm) || []).length;
-      if (scenarios < 2) {
-        findings.push(`requirement "${name}" has ${scenarios} scenario(s); the unhappy path is missing`);
+    for (const section of sections(text)) {
+      if (/REMOVED|RENAMED/i.test(section.heading)) continue;
+      for (const block of section.body.split(/^### Requirement:/m).slice(1)) {
+        const name = block.split(/\r?\n/)[0].trim();
+        const scenarios = (block.match(/^#### Scenario:/gm) || []).length;
+        if (scenarios < 2) {
+          findings.push(`requirement "${name}" has ${scenarios} scenario(s); the unhappy path is missing`);
+        }
       }
     }
   }
 
   const tasks = read(path.join(dir, "tasks.md"));
   if (tasks !== null) {
-    for (const line of tasks.split(/\r?\n/)) {
+    tasks.split(/\r?\n/).forEach((line, i) => {
       if (/^\s*-\s\[[ xX]\]/.test(line) && !/(?<!un)verif/i.test(line)) {
-        const title = line.replace(/^\s*-\s\[[ xX]\]\s*/, "").slice(0, 60);
-        findings.push(`task "${title}" does not say how it is verified`);
+        const title = line.replace(/^\s*-\s\[[ xX]\]\s*/, "").trim().slice(0, 60);
+        // A task with no title has nothing to quote back; the line
+        // number is what makes the finding findable.
+        const named = title ? `task "${title}"` : `task on line ${i + 1}`;
+        findings.push(`${named} does not say how it is verified`);
       }
-    }
+    });
   }
 
   return findings;

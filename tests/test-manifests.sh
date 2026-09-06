@@ -25,7 +25,7 @@ contains "marketplace description names verification" \
 
 readme=$(cat README.md 2>/dev/null)
 contains "README counts five skills"          "$readme" "Five skills"
-contains "README counts four hooks"           "$readme" "Five hooks"
+contains "README counts five hooks"           "$readme" "Five hooks"
 contains "README documents the verify skill"  "$readme" "\`verify\`"
 contains "README documents the scripts"       "$readme" "scripts/verify"
 contains "README documents progress.md"       "$readme" "progress.md"
@@ -36,5 +36,19 @@ contains "README documents the compound step" "$readme" "compound"
 contains "README documents the proposal lint" "$readme" "Non-Goals"
 contains "README documents the tag"           "$readme" "v0.3.0"
 contains "README documents the fitness step"  "$readme" "fitness check"
+
+# "Releases are tagged" is not an instruction. Both routes to a pinned
+# install are spelled out, because a tag nobody can check out is a
+# version number in a file.
+contains "README names the local checkout route"    "$readme" 'marketplace add C:\Users\frufus\development\claude-standards'
+contains "README names the marketplace cache route" "$readme" "~/.claude/plugins/marketplaces/claude-standards"
+contains "README says to check the tag out"         "$readme" "git checkout v0.3.0"
+
+# The hooks table is what a reader consults instead of reading the hook.
+srow=$(grep -F '| `SessionStart`' README.md 2>/dev/null)
+contains "README's SessionStart row names AGENTS.md"      "$srow" "AGENTS.md"
+contains "README's SessionStart row names scripts/verify" "$srow" "scripts/verify"
+not_contains "README does not miscount the helper libraries" "$readme" "both helper libraries"
+
 contains "plugin description names AGENTS.md" \
   "$(node -p 'require("./plugins/dev-standards/.claude-plugin/plugin.json").description' 2>/dev/null)" "AGENTS.md"
