@@ -52,8 +52,9 @@ the toolchain for the life of the project.
    `.dev.pid` and `.dev.log` to `.gitignore`; the web `dev` script writes
    them. These two scripts are the deterministic steps of every change:
    `scripts/dev` brings the application up idempotently and prints where,
-   `scripts/verify` runs lint, typecheck, units and end-to-end in that
-   order and exits non-zero at the first failure. The `verify` skill
+   `scripts/verify` runs lint, typecheck, the fitness check, units and
+   end-to-end in that order (`--deep` adds mutation testing on `web`) and
+   exits non-zero at the first failure. The `verify` skill
    runs both; a session never composes those steps by hand.
 
 7. **Write `.github/pull_request_template.md`** from

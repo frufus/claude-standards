@@ -1,7 +1,7 @@
 {
   "name": "dev-standards",
-  "version": "0.2.0",
-  "description": "Spec-driven development standard. Reports project conformance at session start, reminds when source is edited without an active OpenSpec change, checks commit messages, reminds when an unverified change is pushed or archived, scaffolds new projects from two prescribed stack profiles with their dev and verify scripts, verifies a change in a fresh sub-agent against the spec's scenarios, and decides where a new UI component belongs before it is built. Web projects build on the shared design system unless an ADR says otherwise.",
+  "version": "0.3.0",
+  "description": "Spec-driven development standard. Reports project conformance at session start, reminds when source is edited without an active OpenSpec change, checks commit messages, reminds when an unverified or rule-breaking change is pushed or archived, denies four destructive git commands until the human says otherwise, scaffolds new projects from two prescribed stack profiles with AGENTS.md, dev and verify scripts and a pull-request contract, verifies a change in a fresh sub-agent against the spec's scenarios, and decides where a new UI component belongs before it is built. Web projects build on the shared design system unless an ADR says otherwise.",
   "author": {
     "name": "Frufus",
     "email": "github@frufus.de"
