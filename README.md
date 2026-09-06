@@ -17,10 +17,14 @@ the second week. It is invisible at the moment it applies — when someone is
 about to edit a file, or about to write a commit message, or three months into a
 project that quietly never adopted it.
 
-This plugin puts the standard where the work happens. Four hooks and five
-skills, all of which **report rather than block**. Nothing here can deny a tool
-call. A guard that stops legitimate work — a typo in a comment, a hotfix,
-repairing a broken build — gets switched off, and then it protects nothing.
+This plugin puts the standard where the work happens. Five hooks and five
+skills. Four of the hooks **report rather than block**: a guard that stops
+legitimate work — a typo in a comment, a hotfix, repairing a broken build —
+gets switched off, and then it protects nothing. There is one exception,
+recorded in [ADR-0002](docs/adr/0002-destructive-git-is-the-one-hook-that-denies.md):
+a force-push, a hard reset, a clean or a branch force-delete is denied until
+the human says otherwise, because for those four a reminder arrives after the
+decision.
 
 ## The standard itself
 

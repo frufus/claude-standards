@@ -1,0 +1,21 @@
+LIB="plugins/dev-standards/hooks/lib/destructive-git.js"
+
+kind() { printf '%s' "$1" | node "$LIB" 2>/dev/null; }
+
+check "git push --force"             "$(kind 'git push --force origin main')" "force-push"
+check "git push -f"                  "$(kind 'git push -f')" "force-push"
+check "git push --force-with-lease"  "$(kind 'git push --force-with-lease')" "force-push"
+check "git reset --hard"             "$(kind 'git reset --hard HEAD~1')" "hard-reset"
+check "git clean -fd"                "$(kind 'git clean -fd')" "clean"
+check "git clean --force"            "$(kind 'git clean --force')" "clean"
+check "git branch -D"                "$(kind 'git branch -D claude/x')" "branch-delete"
+check "after && is still seen"       "$(kind 'git fetch && git reset --hard origin/main')" "hard-reset"
+check "on its own line is still seen" "$(kind "$(printf 'git add -A\ngit push --force')")" "force-push"
+check "plain push is nothing"        "$(kind 'git push -u origin claude/x')" ""
+check "soft reset is nothing"        "$(kind 'git reset --soft HEAD~1')" ""
+check "clean dry run is nothing"     "$(kind 'git clean -n')" ""
+check "branch -d is nothing"         "$(kind 'git branch -d merged')" ""
+check "quoted text is nothing"       "$(kind "echo 'git push --force'")" ""
+check "empty input is nothing"       "$(kind '')" ""
+printf 'git push --force' | node "$LIB" >/dev/null 2>&1
+check "always exits 0"               "$?" "0"
