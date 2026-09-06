@@ -1,29 +1,7 @@
-# CLAUDE.md
+@AGENTS.md
 
-<one or two sentences: what this project is, for whom>
+# Claude-specific notes
 
-**The binding project truth is `openspec/config.yaml`.** Product, non-negotiables,
-tech stack and domain vocabulary live in its `context:` block. Current
-requirements are the capability specs under `openspec/specs/`; anything under
-`openspec/changes/` is proposed, not built.
-
-## Commands
-
-```
-scripts/verify     # lint, format check, typecheck, unit — the whole check, in order
-scripts/dev        # the entry point (no long-running process by default)
-uv sync            # install dependencies
-uv run pytest      # tests only
-uv run ruff check  # lint only
-uv run mypy .      # typecheck only, strict
-```
-
-## Directories
-
-```
-scripts/           Deterministic steps: dev, verify
-src/               Application code
-openspec/          Binding specs and change proposals
-docs/adr/          Architecture decisions
-tests/             Tests
-```
+Everything tool-agnostic — what this project is, the commands, the
+directories, the boundaries — is in `AGENTS.md`, imported above. Rules live
+in `openspec/config.yaml`, never here. Nothing is Claude-specific yet.

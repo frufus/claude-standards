@@ -41,6 +41,19 @@ contains "new-project stages the scripts before chmod" "$np" "git add scripts/de
 contains "new-project gitignores the dev pidfile" "$np" ".dev.pid"
 contains "new-project keeps the scripts LF on clone"   "$np" "scripts/* text eol=lf"
 contains "new-project keeps Playwright specs out of Vitest" "$np" 'configDefaults.exclude, "e2e/**"'
+contains "new-project writes AGENTS.md"            "$np" "templates/<profile>/AGENTS.md"
+contains "new-project imports it from CLAUDE.md"   "$np" "@AGENTS.md"
+contains "new-project writes the PR template" "$np" "pull_request_template.md"
+
+# Step 8 installs the sensors rather than expecting their configs to
+# appear: a step that expects a file is a step that silently does not run.
+contains "new-project installs dependency-cruiser"   "$np" "dependency-cruiser"
+contains "new-project installs the Stryker runner"   "$np" "@stryker-mutator/vitest-runner"
+contains "new-project installs import-linter"        "$np" "import-linter"
+contains "new-project pins TypeScript to 6"          "$np" "typescript@^6"
+contains "new-project copies the fitness config"     "$np" ".dependency-cruiser.cjs"
+contains "new-project copies the mutation config"    "$np" "stryker.config.json"
+contains "new-project appends the import-linter table" "$np" "importlinter.fragment.toml"
 
 vf=$(cat "$S/verify/SKILL.md" 2>/dev/null)
 contains "verify runs in a fresh sub-agent"         "$vf" "fresh sub-agent"
@@ -57,7 +70,7 @@ contains "verify requires every finding answered"   "$vf" "Answer:"
 contains "verify appends to progress.md"            "$vf" "progress.md"
 
 sc=$(cat "$S/sdd-change/SKILL.md" 2>/dev/null)
-check "sdd-change gives every step a Produces line" "$(printf '%s' "$sc" | grep -c 'Produces:')" "9"
+check "sdd-change gives every step a Produces line" "$(printf '%s' "$sc" | grep -c 'Produces:')" "10"
 contains "sdd-change invokes verify at step 7"       "$sc" "\`verify\` skill"
 contains "sdd-change names verification.md"         "$sc" "verification.md"
 contains "sdd-change keeps state in progress.md"    "$sc" "progress.md"
@@ -65,3 +78,10 @@ contains "sdd-change states the missing-artefact rule" "$sc" "has not happened"
 contains "sdd-change logs the session boundary"     "$sc" "session ended"
 contains "sdd-change sets Status in-progress"       "$sc" "Status: in-progress"
 contains "sdd-change clears a stale archive lock"   "$sc" ".openspec-archive.lock"
+contains "sdd-change implements one task per session on large changes" "$sc" "one task per session"
+contains "sdd-change leaves the tree mergeable at session end"        "$sc" "mergeable"
+contains "sdd-change has a compound step"            "$sc" "**Compound.**"
+contains "sdd-change asks the compound question"     "$sc" "catch this automatically next time"
+contains "sdd-change names the four compound outcomes" "$sc" "test, a hook, a rule, or nothing"
+contains "sdd-change logs compound decisions"        "$sc" "compound:"
+contains "sdd-change counts findings at archive"     "$sc" "archived:"

@@ -20,15 +20,16 @@ done
 # The order is the contract: cheap checks before expensive ones, so a
 # lint failure never waits on an end-to-end run.
 labels() { grep -E '^run ' "$T/$1/scripts/verify" 2>/dev/null | awk '{print $2}' | tr '\n' ' '; }
-check "web verify runs lint, typecheck, unit, e2e in order" \
-  "$(labels web)" "lint typecheck unit e2e "
-check "python verify runs lint, format, typecheck, unit in order" \
-  "$(labels python)" "lint format typecheck unit "
+check "web verify runs lint, typecheck, fitness, unit, e2e in order" \
+  "$(labels web)" "lint typecheck fitness unit e2e "
+check "python verify runs lint, format, typecheck, fitness, unit in order" \
+  "$(labels python)" "lint format typecheck fitness unit "
 
 web=$(cat "$T/web/scripts/verify" 2>/dev/null)
 contains "web verify brings the dev server up for e2e" "$web" "scripts/dev up"
 contains "web verify takes the server down again"      "$web" "scripts/dev down"
 contains "web verify stops at the first failure"       "$web" "exit 1"
+contains "web verify gates mutation behind deep"       "$web" 'if [ "$deep" -eq 1 ]'
 
 # Under Git Bash a background job's pid is an MSYS pid that taskkill does
 # not know, and netstat's state column is localised. The listener is found

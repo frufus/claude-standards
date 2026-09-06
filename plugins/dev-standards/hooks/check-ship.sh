@@ -53,13 +53,22 @@ for dir in "$root"/openspec/changes/*/; do
             add "\`$id\` has $n unanswered finding(s) in \`verification.md\`. Each is fixed or rejected with a stated reason — write the \`Answer:\` line."
         fi
     fi
+
+    # The proposal rules are reported at the same moment, for the same
+    # reason: this is when the work leaves the machine.
+    lint=$(node "$HERE/lib/change-lint.js" "$dir" 2>/dev/null)
+    if [ -n "$lint" ]; then
+        while IFS= read -r line; do
+            [ -n "$line" ] && add "\`$id\`: $line"
+        done <<< "$lint"
+    fi
 done
 
 [ -n "$missing" ] || exit 0
 
-notice="You are about to ${action} with a change in flight that is not verified:${missing}
+notice="You are about to ${action} with a change in flight that is not ready:${missing}
 
-A change does not leave the machine before it is verified. If this is intended — a hotfix, or a push to back up work in progress — say so and continue."
+A change does not leave the machine before it is verified and its proposal follows the rules. If this is intended — a hotfix, or a push to back up work in progress — say so and continue."
 
 printf '%s' "$notice" | node -e '
 let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{

@@ -27,10 +27,14 @@ the toolchain for the life of the project.
      belongs here and nowhere else.
    - `${CLAUDE_PLUGIN_ROOT}/templates/shared/config.rules.yaml` verbatim.
 
-4. **Write `CLAUDE.md`** from
+4. **Write `AGENTS.md` and `CLAUDE.md`** from
+   `${CLAUDE_PLUGIN_ROOT}/templates/<profile>/AGENTS.md` and
    `${CLAUDE_PLUGIN_ROOT}/templates/<profile>/CLAUDE.md`, filling the
-   one-line description. Keep it thin: orientation, commands, directories.
-   Rules belong in `openspec/config.yaml`, never in both.
+   one-line description in `AGENTS.md`. `AGENTS.md` is what Codex, Cursor,
+   Copilot and every other agent read; `CLAUDE.md` begins with `@AGENTS.md`
+   so Claude Code reads the same file, and holds only what is
+   Claude-specific. Keep both thin: orientation, commands, directories,
+   boundaries. Rules belong in `openspec/config.yaml`, never in either.
 
 5. **Create `docs/adr/`** with a `.gitkeep`.
 
@@ -48,11 +52,19 @@ the toolchain for the life of the project.
    `.dev.pid` and `.dev.log` to `.gitignore`; the web `dev` script writes
    them. These two scripts are the deterministic steps of every change:
    `scripts/dev` brings the application up idempotently and prints where,
-   `scripts/verify` runs lint, typecheck, units and end-to-end in that
-   order and exits non-zero at the first failure. The `verify` skill
+   `scripts/verify` runs lint, typecheck, the fitness check, units and
+   end-to-end in that order (`--deep` adds mutation testing on `web`) and
+   exits non-zero at the first failure. The `verify` skill
    runs both; a session never composes those steps by hand.
 
-7. **Install the toolchain** for the profile. On `web` this includes
+7. **Write `.github/pull_request_template.md`** from
+   `${CLAUDE_PLUGIN_ROOT}/templates/shared/pull_request_template.md`,
+   verbatim. It asks for intent, the change id, the verification report,
+   proof, which parts were agent-written and their risk tier, and where
+   human attention is wanted — so what reaches a reviewer does not depend
+   on the session that opened the pull request.
+
+8. **Install the toolchain** for the profile. On `web` this includes
    `@frufus/design-system`, wired with the four CSS lines it documents,
    unless the ADR described under that profile says otherwise. Set
    `reuseExistingServer: true` in `playwright.config.ts` so Playwright
@@ -61,13 +73,27 @@ the toolchain for the life of the project.
    (import `defineConfig` and `configDefaults` from `vitest/config`), so
    the Playwright specs are run by the e2e step only.
 
-8. **Verify**: run `scripts/verify`. It must run to the end — an empty
+   Then install the sensors ADR-0003 adopted, so `scripts/verify`'s
+   `fitness` and `--deep` mutation steps have something to run. On `web`:
+   `npm install -D dependency-cruiser @stryker-mutator/core
+   @stryker-mutator/vitest-runner`, then copy
+   `${CLAUDE_PLUGIN_ROOT}/templates/web/.dependency-cruiser.cjs` and
+   `${CLAUDE_PLUGIN_ROOT}/templates/web/stryker.config.json` verbatim into
+   the project root. Pin TypeScript with `npm install -D typescript@^6`:
+   dependency-cruiser cruises no TypeScript modules at all on 7, and the
+   `fitness` step would then pass while proving nothing (ADR-0003). On
+   `python`, add `import-linter` to the dev dependencies and append
+   `${CLAUDE_PLUGIN_ROOT}/templates/python/importlinter.fragment.toml` to
+   `pyproject.toml`, replacing `<package>` with the real package name;
+   python has no mutation step yet (ADR-0003).
+
+9. **Verify**: run `scripts/verify`. It must run to the end — an empty
    suite that runs is fine, a suite that cannot run is not.
 
-9. **Confirm conformance**: the SessionStart conformance hook must report
-   nothing for this project. Start a session in it, or run
-   `bash "${CLAUDE_PLUGIN_ROOT}/hooks/check-conformance.sh"` with
-   `{"cwd":"<project>"}` on stdin and confirm the output is empty.
+10. **Confirm conformance**: the SessionStart conformance hook must report
+    nothing for this project. Start a session in it, or run
+    `bash "${CLAUDE_PLUGIN_ROOT}/hooks/check-conformance.sh"` with
+    `{"cwd":"<project>"}` on stdin and confirm the output is empty.
 
 ## Profile `web`
 
@@ -78,7 +104,9 @@ Pinia for ephemeral UI state only; persistent data goes through a
 repository layer. vue-router. i18n from the first UI change, with no
 hardcoded user-facing strings. Vitest for units, Playwright for a thin
 end-to-end layer. ESLint and Prettier. `vue-tsc` for typechecking.
-Default posture: no backend, no secrets in the bundle, no external CDNs,
+`dependency-cruiser` for the architecture-fitness step and Stryker (with
+`@stryker-mutator/vitest-runner`) for the `--deep` mutation step, on
+`typescript@^6` (ADR-0003). Default posture: no backend, no secrets in the bundle, no external CDNs,
 fonts or analytics.
 
 **The user interface is built on `@frufus/design-system`.** Install it and
@@ -99,8 +127,9 @@ decides where the component belongs before anything is built.
 ## Profile `python`
 
 `uv` for dependencies and environments. `ruff` for both linting and
-formatting. `mypy` in strict mode. `pytest`. A Dockerfile where the
-project is deployed.
+formatting. `mypy` in strict mode. `pytest`. `import-linter` for the
+architecture-fitness step, contracts in `pyproject.toml`; no mutation
+sensor yet (ADR-0003). A Dockerfile where the project is deployed.
 
 ## The rule above both profiles
 

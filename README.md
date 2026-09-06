@@ -17,10 +17,14 @@ the second week. It is invisible at the moment it applies — when someone is
 about to edit a file, or about to write a commit message, or three months into a
 project that quietly never adopted it.
 
-This plugin puts the standard where the work happens. Four hooks and five
-skills, all of which **report rather than block**. Nothing here can deny a tool
-call. A guard that stops legitimate work — a typo in a comment, a hotfix,
-repairing a broken build — gets switched off, and then it protects nothing.
+This plugin puts the standard where the work happens. Five hooks and five
+skills. Four of the hooks **report rather than block**: a guard that stops
+legitimate work — a typo in a comment, a hotfix, repairing a broken build —
+gets switched off, and then it protects nothing. There is one exception,
+recorded in [ADR-0002](docs/adr/0002-destructive-git-is-the-one-hook-that-denies.md):
+a force-push, a hard reset, a clean or a branch force-delete is denied until
+the human says otherwise, because for those four a reminder arrives after the
+decision.
 
 ## The standard itself
 
@@ -49,6 +53,10 @@ included, and leaves a verdict and proof per scenario in the change directory.
 Every *fail* and *not verifiable* is answered — fixed, or rejected with a
 reason — before the change is pushed, PR'd or archived.
 
+**A test is never deleted, skipped or weakened to make a check pass.**
+Changes to authentication, payments, secrets or the parsing of untrusted
+input are reviewed by the human whatever the verdict.
+
 **Reviews are answered, not obeyed.** Every finding — human, AI, linter, CI —
 ends as *fixed* or *rejected with a stated reason*. Nothing is silently dropped.
 Where a project has specs, they and its ADRs outrank any reviewer. A disputed
@@ -62,6 +70,21 @@ finding is settled with a test, not an argument.
 /plugin marketplace add frufus/claude-standards
 /plugin install dev-standards@claude-standards
 ```
+
+Releases are tagged; the current release is `v0.3.0`. Claude Code has no
+flag for installing a marketplace at a tag, so pinning is a checkout in
+whichever clone the marketplace is read from — two routes:
+
+1. **Register this checkout as the marketplace.**
+   `/plugin marketplace add C:\Users\frufus\development\claude-standards`,
+   then `git checkout v0.3.0` in that directory. The plugin is loaded
+   from the working tree, so the tag you have checked out is the version
+   that runs.
+2. **Register the remote.** `/plugin marketplace add frufus/claude-standards`,
+   then `git checkout v0.3.0` inside the marketplace cache under
+   `~/.claude/plugins/marketplaces/claude-standards`. Note that
+   `/plugin marketplace update` pulls the branch again and moves you off
+   the tag.
 
 ## What you get
 
@@ -96,14 +119,15 @@ verifier on purpose. The session that wrote the code checks it against its
 own theory of the code; the scenarios it fails to drive are the ones the
 theory says cannot fail. Fresh context is the whole mechanism.
 
-### Four hooks
+### Five hooks
 
 | Event                       | What it does                                                                    |
 | --------------------------- | ------------------------------------------------------------------------------- |
-| `SessionStart`              | Reports which parts of the standard this project is missing — no `openspec/`, unprofiled, no `CLAUDE.md`, no `docs/adr/`, no design-system dependency in a web project. |
+| `SessionStart`              | Reports which parts of the standard this project is missing — no `openspec/`, unprofiled, no `CLAUDE.md`, no `docs/adr/`, no `AGENTS.md` or a `CLAUDE.md` that does not import it, no `scripts/verify`, no design-system dependency in a web project. |
 | `PreToolUse` on `Edit\|Write` | Reminds when a **source** file is edited with no OpenSpec change in flight.     |
 | `PreToolUse` on `Bash`      | Checks a `git commit -m` subject against Conventional Commits and the 72-character limit. |
-| `PreToolUse` on `Bash`      | Reminds on `git push`, `gh pr create` or `openspec archive` while a change in flight has no `verification.md` or an unanswered finding in it. |
+| `PreToolUse` on `Bash`      | **Denies** a force-push, hard reset, clean or branch force-delete until the human says otherwise (`CLAUDE_STANDARDS_ALLOW_DESTRUCTIVE=1`). The one exception; see ADR-0002. |
+| `PreToolUse` on `Bash`      | Reminds on `git push`, `gh pr create` or `openspec archive` while a change in flight has no `verification.md` or an unanswered finding in it, or a proposal that breaks the shared rules (no Non-Goals, a requirement without its unhappy path, a task without a verification statement). |
 
 A project is *allowed* to be non-conforming. Saying so once per session is the
 whole job. The edit reminder stays quiet when the project has not adopted the
@@ -124,8 +148,9 @@ to be present.
 
 Both profiles carry two scripts, written by `new-project`: `scripts/dev`
 brings the application up idempotently and prints where, `scripts/verify`
-runs lint, typecheck, units and end-to-end in that order and exits non-zero
-at the first failure. They are the deterministic steps of every change; a
+runs lint, typecheck, the fitness check, units and end-to-end in that order
+and exits non-zero at the first failure (`--deep` adds mutation testing on
+`web`; see ADR-0003). They are the deterministic steps of every change; a
 session runs them instead of rediscovering the toolchain.
 
 Going without the design system in a web project is possible, but the opt-out is
@@ -143,11 +168,14 @@ by coincidence rather than on purpose.
 2. `openspec/config.yaml`, assembled in order from the profile fragment
    (`schema:` and `profile:` — the key the conformance hook reads), a `context:`
    block written **with the human**, and the shared rule set verbatim.
-3. `CLAUDE.md` from the profile template — deliberately thin, because it points
-   at the config rather than restating it.
+3. `AGENTS.md` from the profile template — commands, directories,
+   boundaries — and a `CLAUDE.md` that begins with `@AGENTS.md`, so Claude
+   Code and every other agent read the same file.
 4. `docs/adr/` for decisions to live in.
 5. `scripts/dev` and `scripts/verify` from the profile, executable in git's
    index.
+6. `.github/pull_request_template.md`: intent, proof, provenance and risk
+   tier, and where human attention is wanted.
 
 The `context:` block is the binding project truth: product, non-negotiable
 principles, tech stack, language convention and domain vocabulary. Everything a
@@ -163,7 +191,7 @@ task states how it is verified.
 ## What a change leaves behind
 
 Every step of `sdd-change` produces an artefact, and a step whose artefact
-is missing has not happened. Two of them are new:
+is missing has not happened. Three of them are new:
 
 - `openspec/changes/<id>/progress.md` — a status header (overwritten) and
   an append-only log: approval, each task's commit, each deviation, each
@@ -172,6 +200,9 @@ is missing has not happened. Two of them are new:
 - `openspec/changes/<id>/verification.md` — one verdict per scenario with
   its proof, and an `Answer:` under every finding. The ship-check hook
   reads it.
+- A `compound:` line per finding in `progress.md`: whether it became a
+  test, a hook, a rule, or a recorded "nothing"; and an `archived:` line
+  with the counts.
 
 Both archive with the change.
 
@@ -183,15 +214,16 @@ Both archive with the change.
 .claude-plugin/marketplace.json    The marketplace; lists one plugin
 plugins/dev-standards/             The plugin
   .claude-plugin/plugin.json
-  hooks/                           Four hooks, plus shared bash and node helpers
+  hooks/                           Five hooks, plus shared bash and node helpers
   skills/                          adr, component, new-project, sdd-change, verify
   templates/
     global/CLAUDE.md               The always-loaded rule layer
     shared/config.rules.yaml       Rules bound into every project
-    web/  python/                  Per-profile CLAUDE.md, config fragment and scripts/
+    shared/pull_request_template.md
+    web/  python/                  Per-profile AGENTS.md, CLAUDE.md, config fragment and scripts/
     adr/TEMPLATE.md
 tests/                             Bash harness, one file per subject
-docs/adr/                          This repository's own decisions
+docs/adr/                          This repository's own decisions — three so far
 ```
 
 The plugin lives in a subdirectory rather than at the repository root, matching
@@ -206,13 +238,14 @@ prescribes.
 bash tests/run-tests.sh
 ```
 
-292 checks over the manifests, both helper libraries, all four hooks, all five
-skills, the script templates and every other template. The suite asserts the
+476 checks over the manifests, the helper libraries, all five hooks,
+all five skills, the script templates — read, and the web `verify` run
+against stub executables — and every other template. The suite asserts the
 *content* of the skills and templates, not merely that the files exist — so a
 skill that stops prescribing the design system, or a template that grows fat,
 fails the build.
 
 ## Status and licence
 
-Version 0.2.0. Complete and green; not published beyond this account. No licence
+Version 0.3.0. Complete and green; not published beyond this account. No licence
 file — all rights reserved.

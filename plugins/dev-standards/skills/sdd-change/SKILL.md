@@ -31,7 +31,10 @@ hook, or the next session, say where a change is without asking.
 4. **Implement**, task by task, tests first. Commit as each task
    completes — the commit-message and cadence rules live in the global
    CLAUDE.md. After each task: tick it in `tasks.md`, append a log line
-   with the commit subject, update `Current:`.
+   with the commit subject, update `Current:`. When the change has more
+   than three tasks, implement one task per session, and leave the tree
+   committed and mergeable at the end of every session, so a session that
+   dies costs one task.
    Produces: one commit per task; `tasks.md` ticked; `progress.md` current
    with `Status: in-progress`.
 5. **Record decisions.** Anything that outlives the change becomes an ADR
@@ -53,16 +56,23 @@ hook, or the next session, say where a change is without asking.
    CLAUDE.md.
    Produces: every finding answered in the review itself;
    `Status: reviewed`.
-9. **Archive.** `scripts/dev down` if the server is up, then
-   `openspec archive <change-id>` folds the spec deltas into the
-   capability specs. The specification is now current because the work
-   finished, not because someone remembered to update it. If an earlier
-   archive attempt failed, remove the stale
-   `openspec/changes/archive/.openspec-archive.lock` before retrying.
-   After archiving, replace the `Purpose: TBD` the archiver writes into a
-   newly created capability spec.
-   Produces: the change, with `progress.md` and `verification.md`, under
-   `openspec/changes/archive/`.
+9. **Compound.** For every finding the verifier or a reviewer raised, ask:
+   would the system catch this automatically next time? Decide one of
+   four things — a test, a hook, a rule, or nothing — and log it. A rule
+   goes into `openspec/config.yaml`, `AGENTS.md` or an ADR, never into a
+   file an agent cannot see. "Nothing" states why it will not recur.
+   Produces: one `compound:` log line per finding in `progress.md`.
+10. **Archive.** `scripts/dev down` if the server is up, then
+    `openspec archive <change-id>` folds the spec deltas into the
+    capability specs. The specification is now current because the work
+    finished, not because someone remembered to update it. If an earlier
+    archive attempt failed, remove the stale
+    `openspec/changes/archive/.openspec-archive.lock` before retrying.
+    After archiving, replace the `Purpose: TBD` the archiver writes into a
+    newly created capability spec.
+    Produces: the change, with `progress.md` and `verification.md`, under
+    `openspec/changes/archive/`; a log line `archived: <n> verifier
+    findings, <m> review findings, <k> rounds`.
 
 ## progress.md
 
@@ -80,6 +90,9 @@ Blocked: <what, or —>
 - 2026-09-06 — deviation: <what and why>
 - 2026-09-06 — session ended at task 3, blocked on <what>
 - 2026-09-07 — verified: 4 pass, 1 fail, 0 not verifiable; all answered
+- 2026-09-07 — compound: empty name shows a greeting → test (e2e/greeter.spec.ts)
+- 2026-09-07 — compound: reviewer wanted a null check → nothing (input is parsed at the boundary)
+- 2026-09-07 — archived: 1 verifier findings, 1 review findings, 1 rounds
 ```
 
 The header is overwritten; the log is append-only. Append a line at every

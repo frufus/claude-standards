@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
-# Lint, typecheck, unit tests, end-to-end tests — in that order, stopping
-# at the first failure. The exit status is the verdict. Takes no
-# arguments: a verifier that could be told to skip a step is not one.
+# Lint, typecheck, fitness, unit tests, end-to-end tests — in that order,
+# stopping at the first failure. The exit status is the verdict. The one
+# argument accepted is `--deep`, which adds mutation testing at the end;
+# the default run does not, and neither run skips or reorders a step.
+# Anything else is a usage error (exit 2), because a mistyped `--deep`
+# that quietly ran the shallow suite would read as a deep green.
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
+deep=0; [ "${1:-}" = "--deep" ] && deep=1
+[ $# -eq 0 ] || [ "$1" = "--deep" ] || { echo "usage: scripts/verify [--deep]" >&2; exit 2; }
 
 run() { # label command...
     local label="$1"; shift
@@ -11,6 +16,21 @@ run() { # label command...
     "$@" && return 0
     printf '\nverify: %s failed (exit %s)\n' "$label" "$?" >&2
     exit 1
+}
+
+fitness() {
+    # dependency-cruiser exits 0 and cruises no TypeScript at all on a
+    # TypeScript it does not support (7 at the time of writing); a step
+    # that proves nothing must not pass. The check goes inert once the
+    # notice disappears.
+    local out
+    out=$(npx depcruise src --config .dependency-cruiser.cjs 2>&1)
+    local status=$?
+    printf '%s\n' "$out"
+    case "$out" in
+        *"Support for typescript@"*|*" 0 modules"*) echo "fitness: dependency-cruiser cruised no TypeScript; see ADR-0003" >&2; return 1 ;;
+    esac
+    return "$status"
 }
 
 # The server is started here rather than by Playwright's own webServer
@@ -23,10 +43,13 @@ trap cleanup EXIT
 
 run lint      npm run lint
 run typecheck npm run typecheck
+run fitness   fitness
 run unit      npm run test -- --run
 
 up=$(scripts/dev up) || { printf '%s\n' "$up" >&2; exit 1; }
 case "$up" in "already up"*) ;; *) started=1 ;; esac
 run e2e       npm run test:e2e
+
+if [ "$deep" -eq 1 ]; then run mutation npx stryker run; fi
 
 printf '\nverify: all green\n'

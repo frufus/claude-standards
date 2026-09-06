@@ -1,0 +1,6 @@
+{
+  "testRunner": "vitest",
+  "mutate": ["src/**/*.ts", "src/**/*.vue", "!src/**/*.test.ts"],
+  "reporters": ["clear-text", "progress"],
+  "thresholds": { "high": 80, "low": 60, "break": 50 }
+}

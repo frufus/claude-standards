@@ -35,6 +35,21 @@ if grep -qE '^profile:[[:space:]]*(web|python)[[:space:]]*$' "$cwd/openspec/conf
     add "no \`scripts/verify\` — the verifier has no deterministic check to run. Copy \`scripts/dev\` and \`scripts/verify\` from the profile template (the \`new-project\` skill, step 6)."
 fi
 
+# Every agent that is not Claude Code reads AGENTS.md and nothing else of
+# ours. A profiled project without it is invisible to them.
+#
+# And AGENTS.md that CLAUDE.md does not import is the same failure one
+# step later: the import is what keeps one file. The CR strip is for
+# Windows, where a checkout hands back `@AGENTS.md\r`.
+if grep -qE '^profile:[[:space:]]*(web|python)[[:space:]]*$' "$cwd/openspec/config.yaml" 2>/dev/null; then
+    if [ ! -f "$cwd/AGENTS.md" ]; then
+        add "no \`AGENTS.md\` — agents other than Claude Code read nothing else. Write it from the profile template (the \`new-project\` skill, step 4) and make \`CLAUDE.md\` start with \`@AGENTS.md\`."
+    elif [ -f "$cwd/CLAUDE.md" ] &&
+        [ "$(head -n 1 "$cwd/CLAUDE.md" 2>/dev/null | tr -d '\r')" != "@AGENTS.md" ]; then
+        add "\`CLAUDE.md\` does not import \`AGENTS.md\` — make its first line \`@AGENTS.md\`, or the two files grow two lists of commands."
+    fi
+fi
+
 # The web profile builds its interface on the shared design system. Reported
 # only once there is a package.json to depend on it - before that the project
 # has no toolchain yet and the reminder would be noise - and never when an ADR
