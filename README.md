@@ -72,7 +72,7 @@ finding is settled with a test, not an argument.
 ```
 
 Releases are tagged. The current release is `v0.3.0`; check the
-marketplace checkout out at a tag to pin it.
+marketplace clone out at that tag to pin it.
 
 ## What you get
 
@@ -136,8 +136,9 @@ to be present.
 
 Both profiles carry two scripts, written by `new-project`: `scripts/dev`
 brings the application up idempotently and prints where, `scripts/verify`
-runs lint, typecheck, units and end-to-end in that order and exits non-zero
-at the first failure. They are the deterministic steps of every change; a
+runs lint, typecheck, the fitness check, units and end-to-end in that order
+and exits non-zero at the first failure (`--deep` adds mutation testing on
+`web`; see ADR-0003). They are the deterministic steps of every change; a
 session runs them instead of rediscovering the toolchain.
 
 Going without the design system in a web project is possible, but the opt-out is
@@ -178,7 +179,7 @@ task states how it is verified.
 ## What a change leaves behind
 
 Every step of `sdd-change` produces an artefact, and a step whose artefact
-is missing has not happened. Two of them are new:
+is missing has not happened. Three of them are new:
 
 - `openspec/changes/<id>/progress.md` — a status header (overwritten) and
   an append-only log: approval, each task's commit, each deviation, each
@@ -225,7 +226,7 @@ prescribes.
 bash tests/run-tests.sh
 ```
 
-403 checks over the manifests, both helper libraries, all five hooks,
+406 checks over the manifests, both helper libraries, all five hooks,
 all five skills, the script templates and every other template. The suite asserts the
 *content* of the skills and templates, not merely that the files exist — so a
 skill that stops prescribing the design system, or a template that grows fat,

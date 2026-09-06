@@ -11,7 +11,7 @@ proposal there and is approved before it is implemented.
 ## Commands
 
 ```
-scripts/verify     # lint, format check, typecheck, unit — the whole check, in order
+scripts/verify     # lint, format check, typecheck, fitness, unit — the whole check, in order
 scripts/dev        # the entry point (no long-running process by default)
 uv sync            # install dependencies
 uv run pytest      # tests only

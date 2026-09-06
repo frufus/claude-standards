@@ -11,7 +11,7 @@ proposal there and is approved before it is implemented.
 ## Commands
 
 ```
-scripts/verify     # lint, typecheck, unit, e2e — the whole check, in order
+scripts/verify     # lint, typecheck, fitness, unit, e2e — in order; --deep adds mutation
 scripts/dev        # dev server up (idempotent, prints the URL); `down` stops it
 npm run test       # Vitest only
 npm run lint       # ESLint only

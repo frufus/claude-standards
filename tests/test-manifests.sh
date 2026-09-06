@@ -35,5 +35,6 @@ contains "README documents the PR contract"   "$readme" "pull_request_template"
 contains "README documents the compound step" "$readme" "compound"
 contains "README documents the proposal lint" "$readme" "Non-Goals"
 contains "README documents the tag"           "$readme" "v0.3.0"
+contains "README documents the fitness step"  "$readme" "fitness check"
 contains "plugin description names AGENTS.md" \
   "$(node -p 'require("./plugins/dev-standards/.claude-plugin/plugin.json").description' 2>/dev/null)" "AGENTS.md"
