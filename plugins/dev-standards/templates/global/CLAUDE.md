@@ -27,6 +27,8 @@ is binding for that project and may be stricter; it may not be looser.
 - Tests are green before a change is archived or a pull request opened.
 - Data entering a process is parsed into a known shape at the boundary —
   network, storage, imports, payloads — before anything else touches it.
+- A test is never deleted, skipped or weakened to make a check pass. A
+  failing test is a finding, answered like any other.
 
 ## Reviews are answered, not obeyed
 
@@ -43,6 +45,13 @@ is binding for that project and may be stricter; it may not be looser.
 - With the human: approve a proposal, accept a deviation, merge, and any
   action that is destructive or hard to reverse.
 - "With the human" means stop and wait, not proceed and mention.
+- With the human, whatever the verdict: any change to authentication,
+  payments, secrets handling or the parsing of untrusted input.
+
+## Sessions
+
+- When compacting, keep the change id, the list of modified files and the
+  test commands.
 
 ## Language
 

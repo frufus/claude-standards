@@ -24,6 +24,16 @@ contains "names what the agent does alone" "$g" "- Alone:"
 contains "names what needs the human"      "$g" "- With the human:"
 contains "with-the-human means wait"       "$g" "stop and wait"
 
+# The shortcut every long-running-agent source names first is deleting or
+# weakening a test to get green. The rule must live where it applies in a
+# project with no openspec/: here.
+contains "carries the test ratchet"        "$g" "weaken"
+contains "a failing test is a finding"     "$g" "failing test is a finding"
+contains "carries the compaction line"     "$g" "## Sessions"
+contains "says what survives a compact"    "$g" "When compacting"
+contains "names the code that always gets a human" "$g" "whatever the verdict"
+contains "names untrusted input"           "$g" "untrusted input"
+
 # Spec section 4.5 budgets this file at roughly 50 lines. It is loaded
 # into every session in every directory, so growth here is paid for
 # continuously and by every project, including the ones it does not

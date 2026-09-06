@@ -31,7 +31,10 @@ hook, or the next session, say where a change is without asking.
 4. **Implement**, task by task, tests first. Commit as each task
    completes — the commit-message and cadence rules live in the global
    CLAUDE.md. After each task: tick it in `tasks.md`, append a log line
-   with the commit subject, update `Current:`.
+   with the commit subject, update `Current:`. When the change has more
+   than three tasks, implement one task per session, and leave the tree
+   committed and mergeable at the end of every session, so a session that
+   dies costs one task.
    Produces: one commit per task; `tasks.md` ticked; `progress.md` current
    with `Status: in-progress`.
 5. **Record decisions.** Anything that outlives the change becomes an ADR
