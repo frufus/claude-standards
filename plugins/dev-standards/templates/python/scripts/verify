@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Lint, format check, typecheck, unit tests — in that order, stopping at
-# the first failure. The exit status is the verdict. Takes no arguments.
+# Lint, format check, typecheck, fitness, unit tests — in that order,
+# stopping at the first failure. The exit status is the verdict. Takes
+# no arguments.
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
 
@@ -15,6 +16,7 @@ run() { # label command...
 run lint      uv run ruff check .
 run format    uv run ruff format --check .
 run typecheck uv run mypy .
+run fitness   uv run lint-imports
 run unit      uv run pytest
 
 printf '\nverify: all green\n'

@@ -70,7 +70,13 @@ the toolchain for the life of the project.
    and `scripts/dev` agree about the server. Configure Vitest with
    `exclude: [...configDefaults.exclude, "e2e/**"]` in `vite.config.ts`
    (import `defineConfig` and `configDefaults` from `vitest/config`), so
-   the Playwright specs are run by the e2e step only.
+   the Playwright specs are run by the e2e step only. `scripts/verify`'s
+   `fitness` step expects dependency-cruiser's rules in
+   `.dependency-cruiser.cjs` at the project root, and its `--deep`
+   mutation step expects Stryker's config in `stryker.config.json`
+   there too (see ADR-0003). On `python`, the `fitness` step expects
+   import-linter's contracts in the `[tool.importlinter]` table of
+   `pyproject.toml` (see ADR-0003; python has no mutation step yet).
 
 9. **Verify**: run `scripts/verify`. It must run to the end — an empty
    suite that runs is fine, a suite that cannot run is not.
