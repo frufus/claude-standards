@@ -16,10 +16,10 @@ input=$(cat)
 command_line=$(printf '%s' "$input" | node "$HERE/lib/json-fields.js" --raw tool_input.command 2>/dev/null)
 [ -n "${command_line:-}" ] || exit 0
 
-case "$command_line" in
-    *CLAUDE_STANDARDS_ALLOW_DESTRUCTIVE=1*) exit 0 ;;
-esac
-
+# The override is not checked here. A substring test on the whole line
+# excuses a force-push because a commit message a few segments earlier
+# happened to name the variable; the helper honours it as a prefix of the
+# segment that runs the command, and answers with silence.
 kind=$(printf '%s' "$command_line" | node "$HERE/lib/destructive-git.js" 2>/dev/null)
 [ -n "$kind" ] || exit 0
 

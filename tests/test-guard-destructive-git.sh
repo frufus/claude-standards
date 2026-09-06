@@ -13,6 +13,11 @@ contains "denies a branch force-delete"     "$(guard 'git branch -D x')" '"permi
 check "silent on a plain push"              "$(guard 'git push')" ""
 check "silent on a commit"                  "$(guard 'git commit -m \"feat: x\"')" ""
 check "silent when the human said so"       "$(guard 'CLAUDE_STANDARDS_ALLOW_DESTRUCTIVE=1 git push --force')" ""
+check "silent when the override prefixes a later segment" \
+  "$(guard 'git fetch && CLAUDE_STANDARDS_ALLOW_DESTRUCTIVE=1 git reset --hard origin/main')" ""
+contains "merely mentioning the override does not excuse the push" \
+  "$(guard 'git commit -m \"chore: CLAUDE_STANDARDS_ALLOW_DESTRUCTIVE=1\" && git push --force')" \
+  '"permissionDecision":"deny"'
 printf 'not json' | bash "$HOOK" >/dev/null 2>&1
 check "exits 0 on malformed input"          "$?" "0"
 check "malformed input produces no output"  "$(printf 'not json' | bash "$HOOK" 2>/dev/null)" ""
