@@ -33,3 +33,15 @@ web=$(cat "$T/web/CLAUDE.md" 2>/dev/null)
 contains "web template names the design system" "$web" "@frufus/design-system"
 contains "web template forbids redeclaring its values" "$web" "redeclare"
 contains "web template points at the component skill" "$web" "component"
+
+# The scripts are the first thing a session should reach for, so they
+# come first in the Commands block of both profiles.
+for p in web python; do
+    first=$(awk '/^```/{f=!f; next} f{print; exit}' "$T/$p/CLAUDE.md" 2>/dev/null)
+    contains "$p CLAUDE.md lists scripts/verify first" "$first" "scripts/verify"
+    contains "$p CLAUDE.md lists scripts/dev"  "$(cat "$T/$p/CLAUDE.md" 2>/dev/null)" "scripts/dev"
+done
+
+rules=$(cat "$T/shared/config.rules.yaml" 2>/dev/null)
+contains "shared rules update progress.md on apply"       "$rules" "progress.md"
+contains "shared rules require verification on archive"   "$rules" "verification.md"

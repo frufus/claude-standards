@@ -25,3 +25,18 @@ is_source_path() { # relative_path -> 0 when it is source
         *) return 0 ;;
     esac
 }
+
+os_root_of() { # directory -> nearest ancestor (or itself) holding openspec/, else nothing
+    local d="${1//\\//}"
+    d="${d%/}"
+    [ -d "$d" ] || return 0
+    while :; do
+        if [ -d "$d/openspec" ]; then printf '%s' "$d"; return 0; fi
+        local parent="${d%/*}"
+        # `C:` has no slash to strip and would loop forever; an empty
+        # parent means the root was reached.
+        [ "$parent" = "$d" ] && return 0
+        [ -n "$parent" ] || return 0
+        d="$parent"
+    done
+}

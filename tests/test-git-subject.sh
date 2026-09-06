@@ -47,3 +47,6 @@ check "a command with no git at all yields no subject" \
 
 printf 'not a shell command \x00 at all' | node "$GS" >/dev/null 2>&1
 check "never throws, exits 0 on odd input" "$?" "0"
+
+check "a commit on its own line is still found" \
+  "$(subj "$(printf 'git add .\ngit commit -m "feat: on the second line"')")" "feat: on the second line"

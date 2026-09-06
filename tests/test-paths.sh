@@ -17,3 +17,15 @@ is_source_path ".gitignore";          check "root dotfile is excluded" "$?" "1"
 is_source_path "src/.env";            check "nested dotfile is excluded" "$?" "1"
 is_source_path "package-lock.json";   check "npm lockfile is excluded" "$?" "1"
 is_source_path "uv.lock";             check "uv lockfile is excluded" "$?" "1"
+
+# The ship check needs the project root without calling openspec, so it
+# walks up from cwd to the nearest directory holding openspec/.
+root=$(mktemp -d)
+mkdir -p "$root/openspec" "$root/src/deep"
+check "finds openspec in the directory itself" "$(os_root_of "$root")" "$root"
+check "finds openspec above a nested cwd"      "$(os_root_of "$root/src/deep")" "$root"
+check "normalises backslashes"                 "$(os_root_of "${root//\//\\}/src")" "$root"
+none=$(mktemp -d)
+check "finds nothing where there is nothing"   "$(os_root_of "$none")" ""
+check "a missing directory yields nothing"     "$(os_root_of "/definitely/not/here")" ""
+rm -rf "$root" "$none"

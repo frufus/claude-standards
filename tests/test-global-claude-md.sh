@@ -16,6 +16,14 @@ contains "carries the language convention"   "$g" "English"
 # loads regardless of whether it has a UI.
 not_contains "does not carry the i18n rule"  "$g" "i18n"
 
+# The boundary between what the agent does alone and what needs the
+# human is what the procedure already does; it is written down so it
+# can be checked, and so a future loop has a rule rather than a habit.
+contains "carries the autonomy boundary"  "$g" "## Alone and with the human"
+contains "names what the agent does alone" "$g" "- Alone:"
+contains "names what needs the human"      "$g" "- With the human:"
+contains "with-the-human means wait"       "$g" "stop and wait"
+
 # Spec section 4.5 budgets this file at roughly 50 lines. It is loaded
 # into every session in every directory, so growth here is paid for
 # continuously and by every project, including the ones it does not

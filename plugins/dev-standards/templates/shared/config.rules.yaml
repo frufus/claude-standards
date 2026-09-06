@@ -21,7 +21,9 @@ operations:
     guidance:
       - Run the touched area's tests before the full suite.
       - A deviation from the spec is named and justified before it is built, never discovered afterwards in the diff.
+      - Update the change's progress.md as each task completes; append a log line at the end of any session that leaves the change in-progress.
   archive:
     guidance:
       - Keep the completion summary to what changed in observable behaviour.
       - Note any spec requirement this change made obsolete.
+      - verification.md exists for the change and every fail or not-verifiable verdict in it carries an Answer.

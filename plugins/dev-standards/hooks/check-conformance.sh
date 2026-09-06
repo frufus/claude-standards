@@ -27,6 +27,14 @@ fi
 [ -f "$cwd/CLAUDE.md" ] || add "no \`CLAUDE.md\` — nothing orients a session in this project."
 [ -d "$cwd/docs/adr" ] || add "no \`docs/adr/\` — architecture decisions have nowhere to live."
 
+# A profiled project carries the two scripts the verifier runs. Only a
+# profiled one: a project still missing openspec/ or a profile has been
+# told the bigger thing already.
+if grep -qE '^profile:[[:space:]]*(web|python)[[:space:]]*$' "$cwd/openspec/config.yaml" 2>/dev/null &&
+    [ ! -f "$cwd/scripts/verify" ]; then
+    add "no \`scripts/verify\` — the verifier has no deterministic check to run. Copy \`scripts/dev\` and \`scripts/verify\` from the profile template (the \`new-project\` skill, step 6)."
+fi
+
 # The web profile builds its interface on the shared design system. Reported
 # only once there is a package.json to depend on it - before that the project
 # has no toolchain yet and the reminder would be noise - and never when an ADR
