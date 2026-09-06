@@ -29,7 +29,9 @@ false allow costs commits.
    guard that gets switched off. Rejected: a settings toggle — it would be
    set once and forgotten, where a prefix is a decision per command.
 3. Every other hook keeps reporting. The exception is these four shapes
-   and nothing else; adding a fifth needs a new ADR.
+   and nothing else; adding a fifth needs a new ADR. Rejected: a
+   configurable list of denied commands — a list grows until it fires on
+   routine work, and the argument for denial is specific to these four.
 
 ## Consequences
 
