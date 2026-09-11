@@ -17,9 +17,11 @@ not the conversation, not `tasks.md`. Fresh context is the whole mechanism.
    the one being worked on. Note its id and read
    `openspec/changes/<id>/specs/` — every scenario in every delta,
    happy and unhappy.
-2. **Dispatch the verifier** with the Agent tool (`general-purpose`),
-   using the brief below verbatim with the placeholders filled. Give it
-   nothing else.
+2. **Dispatch the verifier** with the Agent tool (`general-purpose`,
+   `model: sonnet` — the per-invocation model outranks
+   `CLAUDE_CODE_SUBAGENT_MODEL`, so the verifier is not downgraded to
+   the exploration default), using the brief below verbatim with the
+   placeholders filled. Give it nothing else.
 3. **Read `openspec/changes/<id>/verification.md`** when it returns.
 4. **Answer every finding.** Each `fail` and `not verifiable` is a review
    finding: fix it, or reject it with a stated reason. Write the answer

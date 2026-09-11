@@ -717,3 +717,18 @@ Nicht in der Liste: 3 (nicht setzen), 7 und 17–19 (bereits erfüllt).
 
 Alle Schritte hier sind Vorschläge; nichts davon ist im Repo umgesetzt.
 Die Testsuite steht unverändert bei 476 Checks, 0 Fehler.
+
+---
+
+## 6. Umsetzung (2026-09-11)
+
+Nach Freigabe umgesetzt: Schritte 1–8 der Reihenfolge oben, in dieser
+Form — `templates/global/settings.json` und `statusline.js`, `verify` auf
+`model: sonnet`, globale `CLAUDE.md` mit Budget 70 (ADR-0004 statt
+Spec-Änderung), der Hook `filter-test-output.sh` mit `lib/test-command.js`,
+`lib/rewrite-test-command.js`, `lib/test-filter.js` und Tests,
+`templates/<profile>/claude-settings.json` mit `new-project` Schritt 8,
+Hook-Review-Abschnitt im README und PR-Template, graphify als
+`new-project` Schritt 9 plus Konformitätsbericht, `docs/token-measurement.md`.
+Schritt 9 (RTK-Opt-in) nicht umgesetzt, wie empfohlen. Plugin-Version 0.4.0;
+Tag `v0.4.0` nach dem Merge. Testsuite: 549 Checks, 0 Fehler.

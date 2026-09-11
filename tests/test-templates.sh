@@ -20,7 +20,32 @@ for p in web python; do
     not_contains "$p CLAUDE.md does not repeat the commands" "$(cat "$T/$p/CLAUDE.md" 2>/dev/null)" "scripts/verify"
     lines=$(wc -l < "$T/$p/CLAUDE.md" 2>/dev/null || echo 999)
     check "$p CLAUDE.md stays thin" "$([ "$lines" -le 40 ] && echo ok)" "ok"
+
+    # The project settings enable the standard and the language server
+    # for every clone, so neither depends on the machine (ADR-0004).
+    cs=$(cat "$T/$p/claude-settings.json" 2>/dev/null)
+    contains "$p settings enable the standard"        "$cs" "dev-standards@claude-standards"
+    contains "$p settings enable code intelligence"   "$cs" "-lsp@claude-plugins-official"
+    contains "$p settings register the marketplace"   "$cs" "frufus/claude-standards"
+    check "$p settings are valid JSON" \
+      "$(node -e 'JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));console.log("ok")' "$T/$p/claude-settings.json" 2>/dev/null)" "ok"
 done
+contains "web settings pick the TypeScript server" "$(cat "$T/web/claude-settings.json" 2>/dev/null)" "typescript-lsp"
+contains "python settings pick pyright"           "$(cat "$T/python/claude-settings.json" 2>/dev/null)" "pyright-lsp"
+
+# The global layer ships the settings Claude Code reads from ~/.claude/:
+# a plugin cannot set env or a status line itself (ADR-0004).
+gs=$(cat "$T/global/settings.json" 2>/dev/null)
+contains "global settings default subagents to haiku" "$gs" '"CLAUDE_CODE_SUBAGENT_MODEL": "haiku"'
+contains "global settings set an effort default"      "$gs" '"effortLevel"'
+contains "global settings configure the status line"  "$gs" '"statusLine"'
+check "global settings are valid JSON" \
+  "$(node -e 'JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));console.log("ok")' "$T/global/settings.json" 2>/dev/null)" "ok"
+sl=$(printf '{"model":{"display_name":"Sonnet 5"},"context_window":{"used_percentage":42.4,"context_window_size":200000},"cost":{"total_cost_usd":1.234}}' | node "$T/global/statusline.js" 2>/dev/null)
+contains "status line shows the model"        "$sl" "Sonnet 5"
+contains "status line shows context use"      "$sl" "42% of 200k"
+contains "status line shows the session cost" "$sl" '$1.23'
+check "status line survives malformed input" "$(printf 'not json' | node "$T/global/statusline.js" 2>/dev/null)" " · ctx ░░░░░░░░░░ 0% of ?"
 
 # The sensor configs are templates, not prose in a skill: step 8 copies
 # them, so a project gets the rule ADR-0003 adopted rather than whatever
@@ -89,4 +114,5 @@ contains "PR template links verification"    "$pr" "verification.md"
 contains "PR template asks for provenance"   "$pr" "Agent-written"
 contains "PR template asks for a risk tier"  "$pr" "Risk tier"
 contains "PR template names the high tier"   "$pr" "untrusted input"
+contains "PR template puts hooks in the high tier" "$pr" "hooks)"
 contains "PR template asks where to look"    "$pr" "human attention"

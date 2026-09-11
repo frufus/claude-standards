@@ -29,14 +29,24 @@ contains "with-the-human means wait"       "$g" "stop and wait"
 # project with no openspec/: here.
 contains "carries the test ratchet"        "$g" "weaken"
 contains "a failing test is a finding"     "$g" "failing test is a finding"
-contains "carries the compaction line"     "$g" "## Sessions"
+contains "carries the compaction line"     "$g" "## Compact instructions"
 contains "says what survives a compact"    "$g" "When compacting"
+contains "drops tool output on compact"    "$g" "drop tool output"
 contains "names the code that always gets a human" "$g" "whatever the verdict"
 contains "names untrusted input"           "$g" "untrusted input"
+contains "hooks always get a human"        "$g" "hooks,"
 
-# Spec section 4.5 budgets this file at roughly 50 lines. It is loaded
-# into every session in every directory, so growth here is paid for
-# continuously and by every project, including the ones it does not
-# apply to.
+# The token rules (ADR-0004) live here because they apply in every
+# session, profiled or not, and pay for themselves in every session.
+contains "carries the token section"       "$g" "## Tokens"
+contains "carries the edit-in-place rule"  "$g" "never rewrite a whole file"
+contains "carries the no-preamble rule"    "$g" "without preamble"
+contains "carries the exploration rule"    "$g" "before grepping"
+contains "carries the agent-team rule"     "$g" "agent team"
+
+# Spec section 4.5 budgets this file at roughly 50 lines; ADR-0004 raised
+# the ceiling to 70 for the token rules. It is loaded into every session
+# in every directory, so growth here is paid for continuously and by
+# every project, including the ones it does not apply to.
 lines=$(wc -l < "$G" 2>/dev/null || echo 999)
-check "stays within its budget" "$([ "$lines" -le 60 ] && echo ok)" "ok"
+check "stays within its budget" "$([ "$lines" -le 70 ] && echo ok)" "ok"

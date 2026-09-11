@@ -55,8 +55,20 @@ contains "new-project copies the fitness config"     "$np" ".dependency-cruiser.
 contains "new-project copies the mutation config"    "$np" "stryker.config.json"
 contains "new-project appends the import-linter table" "$np" "importlinter.fragment.toml"
 
+# Step 8 wires code intelligence and step 9 the code graph (ADR-0004):
+# a symbol lookup or a graph query before a grep and the reads after it.
+contains "new-project installs the TypeScript language server" "$np" "typescript-language-server"
+contains "new-project installs pyright"                        "$np" "uv add --dev pyright"
+contains "new-project writes the project settings"             "$np" "claude-settings.json"
+contains "new-project pins graphify"                           "$np" "graphifyy==0.9.58"
+contains "new-project installs the graph in strict mode"       "$np" "graphify install --project --strict"
+contains "new-project installs the graph's git hook"           "$np" "graphify hook install"
+contains "new-project commits the graph"                       "$np" "commit \`graphify-out/graph.json\`"
+contains "new-project ignores the graph cache"                 "$np" "graphify-out/cache/"
+
 vf=$(cat "$S/verify/SKILL.md" 2>/dev/null)
 contains "verify runs in a fresh sub-agent"         "$vf" "fresh sub-agent"
+contains "verify names the verifier's model"        "$vf" "model: sonnet"
 contains "verify withholds the diff"                "$vf" "not the diff"
 contains "verify withholds the conversation"        "$vf" "not the conversation"
 contains "verify runs scripts/verify first"         "$vf" "scripts/verify"

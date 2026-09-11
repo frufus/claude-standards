@@ -17,10 +17,11 @@ the second week. It is invisible at the moment it applies — when someone is
 about to edit a file, or about to write a commit message, or three months into a
 project that quietly never adopted it.
 
-This plugin puts the standard where the work happens. Five hooks and five
-skills. Four of the hooks **report rather than block**: a guard that stops
-legitimate work — a typo in a comment, a hotfix, repairing a broken build —
-gets switched off, and then it protects nothing. There is one exception,
+This plugin puts the standard where the work happens. Six hooks and five
+skills. Five of the hooks **never block** — four report, one only shortens
+a test runner's output: a guard that stops legitimate work — a typo in a
+comment, a hotfix, repairing a broken build — gets switched off, and then
+it protects nothing. There is one exception,
 recorded in [ADR-0002](docs/adr/0002-destructive-git-is-the-one-hook-that-denies.md):
 a force-push, a hard reset, a clean or a branch force-delete is denied until
 the human says otherwise, because for those four a reminder arrives after the
@@ -71,17 +72,33 @@ finding is settled with a test, not an argument.
 /plugin install dev-standards@claude-standards
 ```
 
-Releases are tagged; the current release is `v0.3.0`. Claude Code has no
+Then install the global layer once per machine — it is not a plugin
+artefact, Claude Code loads it from `~/.claude/`:
+
+```
+cp plugins/dev-standards/templates/global/CLAUDE.md      ~/.claude/CLAUDE.md
+cp plugins/dev-standards/templates/global/statusline.js  ~/.claude/statusline.js
+# merge plugins/dev-standards/templates/global/settings.json into ~/.claude/settings.json
+```
+
+The settings default sub-agents to haiku, effort to `medium`, and put the
+context window in the status line; the reasoning is
+[ADR-0004](docs/adr/0004-token-rules-live-in-the-always-loaded-layer.md).
+On Windows, write the absolute path of `statusline.js` into the
+`statusLine.command` entry. How to check whether any of it moves the
+bill is in [`docs/token-measurement.md`](docs/token-measurement.md).
+
+Releases are tagged; the current release is `v0.4.0`. Claude Code has no
 flag for installing a marketplace at a tag, so pinning is a checkout in
 whichever clone the marketplace is read from — two routes:
 
 1. **Register this checkout as the marketplace.**
    `/plugin marketplace add C:\Users\frufus\development\claude-standards`,
-   then `git checkout v0.3.0` in that directory. The plugin is loaded
+   then `git checkout v0.4.0` in that directory. The plugin is loaded
    from the working tree, so the tag you have checked out is the version
    that runs.
 2. **Register the remote.** `/plugin marketplace add frufus/claude-standards`,
-   then `git checkout v0.3.0` inside the marketplace cache under
+   then `git checkout v0.4.0` inside the marketplace cache under
    `~/.claude/plugins/marketplaces/claude-standards`. Note that
    `/plugin marketplace update` pulls the branch again and moves you off
    the tag.
@@ -119,12 +136,13 @@ verifier on purpose. The session that wrote the code checks it against its
 own theory of the code; the scenarios it fails to drive are the ones the
 theory says cannot fail. Fresh context is the whole mechanism.
 
-### Five hooks
+### Six hooks
 
 | Event                       | What it does                                                                    |
 | --------------------------- | ------------------------------------------------------------------------------- |
-| `SessionStart`              | Reports which parts of the standard this project is missing — no `openspec/`, unprofiled, no `CLAUDE.md`, no `docs/adr/`, no `AGENTS.md` or a `CLAUDE.md` that does not import it, no `scripts/verify`, no design-system dependency in a web project. |
+| `SessionStart`              | Reports which parts of the standard this project is missing — no `openspec/`, unprofiled, no `CLAUDE.md`, no `docs/adr/`, no `AGENTS.md` or a `CLAUDE.md` that does not import it, no `scripts/verify`, no design-system dependency in a web project, a graph skill installed with no graph built. |
 | `PreToolUse` on `Edit\|Write` | Reminds when a **source** file is edited with no OpenSpec change in flight.     |
+| `PreToolUse` on `Bash`      | **Rewrites** a bare `npm test`, `npx vitest`, `pytest`, `uv run pytest` or `scripts/verify` so its output arrives filtered to failures and the summary; the exit status is untouched. A command with any operator or redirection passes through as typed. |
 | `PreToolUse` on `Bash`      | Checks a `git commit -m` subject against Conventional Commits and the 72-character limit. |
 | `PreToolUse` on `Bash`      | **Denies** a force-push, hard reset, clean or branch force-delete until the human says otherwise (`CLAUDE_STANDARDS_ALLOW_DESTRUCTIVE=1`). The one exception; see ADR-0002. |
 | `PreToolUse` on `Bash`      | Reminds on `git push`, `gh pr create` or `openspec archive` while a change in flight has no `verification.md` or an unanswered finding in it, or a proposal that breaks the shared rules (no Non-Goals, a requirement without its unhappy path, a task without a verification statement). |
@@ -132,6 +150,24 @@ theory says cannot fail. Fresh context is the whole mechanism.
 A project is *allowed* to be non-conforming. Saying so once per session is the
 whole job. The edit reminder stays quiet when the project has not adopted the
 standard at all — repeating it on every edit would make both messages ignorable.
+
+### Before a hook runs on your machine
+
+A hook is code that runs with your credentials, in every session and —
+for plugin and settings-file hooks — inside every sub-agent too. So a
+hook is reviewed like a dependency, not like a config line:
+
+1. Read the script and everything it invokes before enabling it. A hook
+   that downloads or executes something it did not ship with is not
+   installed until that download is pinned and checked.
+2. A change to `hooks/` in this repository, or to a hook a project adds
+   under `.claude/settings.json`, is risk tier *high* in the pull-request
+   template and gets a human whatever the verifier says.
+3. Third-party hooks enter only through this marketplace, pinned by `sha`
+   in `marketplace.json`, never by `/plugin install` from another
+   marketplace on the fly.
+4. `/hooks` shows what is registered; anything you do not recognise is a
+   finding.
 
 ### Two stack profiles
 
@@ -176,6 +212,12 @@ by coincidence rather than on purpose.
    index.
 6. `.github/pull_request_template.md`: intent, proof, provenance and risk
    tier, and where human attention is wanted.
+7. `.claude/settings.json` from the profile template: enables this plugin
+   and the language-server plugin (`typescript-lsp` or `pyright-lsp`) for
+   every clone, so a symbol lookup replaces a grep and the reads after it.
+8. The code graph: `graphify install --project --strict`, its post-commit
+   hook, and `graphify-out/graph.json` committed so the graph exists on
+   every checkout (ADR-0004).
 
 The `context:` block is the binding project truth: product, non-negotiable
 principles, tech stack, language convention and domain vocabulary. Everything a
@@ -214,16 +256,19 @@ Both archive with the change.
 .claude-plugin/marketplace.json    The marketplace; lists one plugin
 plugins/dev-standards/             The plugin
   .claude-plugin/plugin.json
-  hooks/                           Five hooks, plus shared bash and node helpers
+  hooks/                           Six hooks, plus shared bash and node helpers
   skills/                          adr, component, new-project, sdd-change, verify
   templates/
     global/CLAUDE.md               The always-loaded rule layer
+    global/settings.json           Sub-agent model, effort default, status line — for ~/.claude/
+    global/statusline.js           The status line: model, context used, session cost
     shared/config.rules.yaml       Rules bound into every project
     shared/pull_request_template.md
-    web/  python/                  Per-profile AGENTS.md, CLAUDE.md, config fragment and scripts/
+    web/  python/                  Per-profile AGENTS.md, CLAUDE.md, claude-settings.json, config fragment and scripts/
     adr/TEMPLATE.md
 tests/                             Bash harness, one file per subject
-docs/adr/                          This repository's own decisions — three so far
+docs/adr/                          This repository's own decisions — four so far
+docs/token-measurement.md          How to tell whether any of this moves the bill
 ```
 
 The plugin lives in a subdirectory rather than at the repository root, matching
@@ -238,7 +283,7 @@ prescribes.
 bash tests/run-tests.sh
 ```
 
-476 checks over the manifests, the helper libraries, all five hooks,
+549 checks over the manifests, the helper libraries, all six hooks,
 all five skills, the script templates — read, and the web `verify` run
 against stub executables — and every other template. The suite asserts the
 *content* of the skills and templates, not merely that the files exist — so a
@@ -247,5 +292,5 @@ fails the build.
 
 ## Status and licence
 
-Version 0.3.0. Complete and green; not published beyond this account. No licence
+Version 0.4.0. Complete and green; not published beyond this account. No licence
 file — all rights reserved.

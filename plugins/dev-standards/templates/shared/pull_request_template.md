@@ -15,7 +15,7 @@ openspec/changes/<id> — proposal, spec deltas, tasks
 ## Provenance and risk
 
 - Agent-written: <files or areas>
-- Risk tier: low | medium | high (auth, payments, secrets, untrusted input)
+- Risk tier: low | medium | high (auth, payments, secrets, untrusted input, hooks)
 
 ## Where human attention is wanted
 

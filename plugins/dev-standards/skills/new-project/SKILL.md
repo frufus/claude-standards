@@ -87,10 +87,31 @@ the toolchain for the life of the project.
    `pyproject.toml`, replacing `<package>` with the real package name;
    python has no mutation step yet (ADR-0003).
 
-9. **Verify**: run `scripts/verify`. It must run to the end — an empty
-   suite that runs is fine, a suite that cannot run is not.
+   Install the language server the code-intelligence plugin drives: on
+   `web` `npm install -D typescript-language-server`, on `python`
+   `uv add --dev pyright`. Then copy
+   `${CLAUDE_PLUGIN_ROOT}/templates/<profile>/claude-settings.json` to
+   `.claude/settings.json` and read it before committing: it enables
+   `dev-standards` and `typescript-lsp` (web) or `pyright-lsp` (python)
+   for every clone. A symbol lookup there replaces a grep and the file
+   reads that follow it (ADR-0004).
 
-10. **Confirm conformance**: the SessionStart conformance hook must report
+9. **Install the code graph.** `uv tool install graphifyy==0.9.58` (pin;
+   bump deliberately), then in the project root
+   `graphify install --project --strict` — writes
+   `.claude/skills/graphify/SKILL.md` and the read-redirect hook into
+   `.claude/settings.json`; read both before committing them — and
+   `graphify hook install` for the post-commit rebuild. Build it once with
+   `/graphify .` and commit `graphify-out/graph.json` and
+   `graphify-out/GRAPH_REPORT.md`, so the graph exists on every checkout
+   and the strict hook has something to redirect to. Add to `.gitignore`:
+   `graphify-out/cache/`, `graphify-out/graph.html`, `graphify-out/obsidian/`,
+   `graphify-out/wiki/` (ADR-0004).
+
+10. **Verify**: run `scripts/verify`. It must run to the end — an empty
+    suite that runs is fine, a suite that cannot run is not.
+
+11. **Confirm conformance**: the SessionStart conformance hook must report
     nothing for this project. Start a session in it, or run
     `bash "${CLAUDE_PLUGIN_ROOT}/hooks/check-conformance.sh"` with
     `{"cwd":"<project>"}` on stdin and confirm the output is empty.
