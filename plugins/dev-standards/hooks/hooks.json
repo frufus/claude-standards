@@ -1,5 +1,5 @@
 {
-  "description": "Development standard: conformance report at session start, reminders on source edits, commits and shipping; one denial for destructive git",
+  "description": "Development standard: conformance report at session start, reminders on source edits, commits and shipping, test-runner output filtered to failures; one denial for destructive git",
   "hooks": {
     "SessionStart": [
       {
@@ -24,6 +24,10 @@
       {
         "matcher": "Bash",
         "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/filter-test-output.sh\""
+          },
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/guard-destructive-git.sh\""

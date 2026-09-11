@@ -213,4 +213,21 @@ out=$(printf '{"cwd":"%s"}' "$noimport" | bash "$HOOK" 2>/dev/null)
 contains "reports a CLAUDE.md that does not import AGENTS.md" "$out" "does not import"
 not_contains "and does not also claim AGENTS.md is missing"   "$out" "no \`AGENTS.md\`"
 
-rm -rf "$bare" "$full" "$noprofile" "$nods" "$withds" "$optout" "$early" "$py"   "$itself" "$mention" "$dev" "$broken" "$noscript" "$noagents" "$noimport"
+# The graph skill installed with no graph to read: the strict hook would
+# redirect the first read into nothing. Reported once; silent once the
+# graph is there.
+nograph=$(mktemp -d)
+mkdir -p "$nograph/openspec" "$nograph/docs/adr" "$nograph/scripts" "$nograph/.claude/skills/graphify"
+printf 'schema: spec-driven\nprofile: python\n' > "$nograph/openspec/config.yaml"
+printf '@AGENTS.md\n' > "$nograph/CLAUDE.md"
+printf '@AGENTS.md\n' > "$nograph/AGENTS.md"
+printf '#!/usr/bin/env bash\n' > "$nograph/scripts/verify"
+printf '# graphify\n' > "$nograph/.claude/skills/graphify/SKILL.md"
+out=$(printf '{"cwd":"%s"}' "$nograph" | bash "$HOOK" 2>/dev/null)
+contains "reports an installed graph skill with no graph" "$out" "graphify-out/graph.json"
+mkdir -p "$nograph/graphify-out"
+printf '{}' > "$nograph/graphify-out/graph.json"
+check "says nothing once the graph is committed" "$(printf '{"cwd":"%s"}' "$nograph" | bash "$HOOK" 2>/dev/null)" ""
+check "a project without the graph skill is not asked for a graph" "$(printf '{"cwd":"%s"}' "$full" | bash "$HOOK" 2>/dev/null)" ""
+
+rm -rf "$bare" "$full" "$noprofile" "$nods" "$withds" "$optout" "$early" "$py"   "$itself" "$mention" "$dev" "$broken" "$noscript" "$noagents" "$noimport" "$nograph"

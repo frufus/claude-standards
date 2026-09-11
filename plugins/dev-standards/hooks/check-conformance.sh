@@ -35,6 +35,14 @@ if grep -qE '^profile:[[:space:]]*(web|python)[[:space:]]*$' "$cwd/openspec/conf
     add "no \`scripts/verify\` — the verifier has no deterministic check to run. Copy \`scripts/dev\` and \`scripts/verify\` from the profile template (the \`new-project\` skill, step 6)."
 fi
 
+# A project that installed the graph skill but has no graph is one where
+# the strict hook redirects the first read into nothing. Reported once;
+# never installed from here, because a SessionStart hook that rewrites
+# the project's own settings is the silent fix this hook refuses.
+if [ -f "$cwd/.claude/skills/graphify/SKILL.md" ] && [ ! -f "$cwd/graphify-out/graph.json" ]; then
+    add "no \`graphify-out/graph.json\` — the graph skill is installed but the graph was never built or committed. Run \`/graphify .\` and commit \`graphify-out/graph.json\` (the \`new-project\` skill, step 9)."
+fi
+
 # Every agent that is not Claude Code reads AGENTS.md and nothing else of
 # ours. A profiled project without it is invisible to them.
 #

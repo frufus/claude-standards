@@ -46,12 +46,21 @@ is binding for that project and may be stricter; it may not be looser.
   action that is destructive or hard to reverse.
 - "With the human" means stop and wait, not proceed and mention.
 - With the human, whatever the verdict: any change to authentication,
-  payments, secrets handling or the parsing of untrusted input.
+  payments, secrets handling, hooks, or the parsing of untrusted input.
 
-## Sessions
+## Compact instructions
 
-- When compacting, keep the change id, the list of modified files and the
-  test commands.
+- When compacting, keep the change id, the list of modified files, the
+  test commands and the last line of `progress.md`; drop tool output.
+
+## Tokens
+
+- Edit files in place; never rewrite a whole file to change a few lines.
+  Answer without preamble and without restating what was done.
+- Where a language server or a code graph is available, resolve a symbol
+  there before grepping or reading whole files.
+- An agent team costs about seven sessions' worth of tokens. Start one
+  only when the human asks for it.
 
 ## Language
 
