@@ -93,7 +93,7 @@ the toolchain for the life of the project.
    `${CLAUDE_PLUGIN_ROOT}/templates/<profile>/claude-settings.json` to
    `.claude/settings.json` and read it before committing: it enables
    `dev-standards` and `typescript-lsp` (web) or `pyright-lsp` (python)
-   for every clone. A symbol lookup there replaces a grep and the file
+   for every clone, and starts every model at `high` effort (ADR-0006). A symbol lookup there replaces a grep and the file
    reads that follow it (ADR-0004).
 
 9. **Install the code graph.** `uv tool install graphifyy==0.9.58` (pin;

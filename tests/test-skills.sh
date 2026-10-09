@@ -69,6 +69,8 @@ contains "new-project ignores the graph cache"                 "$np" "graphify-o
 vf=$(cat "$S/verify/SKILL.md" 2>/dev/null)
 contains "verify runs in a fresh sub-agent"         "$vf" "fresh sub-agent"
 contains "verify names the verifier's model"        "$vf" "model: sonnet"
+contains "verify points at the generation pin"      "$vf" "ADR-0005"
+contains "verify runs the verifier at high effort"  "$vf" "\`effort: high\`"
 contains "verify withholds the diff"                "$vf" "not the diff"
 contains "verify withholds the conversation"        "$vf" "not the conversation"
 contains "verify runs scripts/verify first"         "$vf" "scripts/verify"
