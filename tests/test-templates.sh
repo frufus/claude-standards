@@ -37,6 +37,23 @@ contains "python settings pick pyright"           "$(cat "$T/python/claude-setti
 # a plugin cannot set env or a status line itself (ADR-0004).
 gs=$(cat "$T/global/settings.json" 2>/dev/null)
 contains "global settings default subagents to haiku" "$gs" '"CLAUDE_CODE_SUBAGENT_MODEL": "haiku"'
+
+# Outside the Anthropic API the tier aliases resolve to 4.5 or 4.6, so the
+# standard pins all three to the current generation (ADR-0005). The three
+# pins are bumped together: a half-done bump fails here.
+pins=$(node -e '
+  const env = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).env || {};
+  const ids = ["HAIKU", "SONNET", "OPUS"].map((t) => env["ANTHROPIC_DEFAULT_" + t + "_MODEL"] || "");
+  const tiers = ids.every((id, i) => id.startsWith("claude-" + ["haiku", "sonnet", "opus"][i] + "-"));
+  const gens = new Set(ids.map((id) => id.replace(/^claude-[a-z]+-/, "")));
+  console.log(tiers && gens.size === 1 && !gens.has("") ? "ok " + [...gens][0] : "bad " + ids.join(","));
+' "$T/global/settings.json" 2>/dev/null)
+check "global settings pin all three tiers to one generation" "${pins%% *}" "ok"
+contains "global settings pin the haiku alias to Haiku 5.5"   "$gs" '"ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-5-5"'
+contains "global settings pin the sonnet alias to Sonnet 5.5" "$gs" '"ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-5-5"'
+contains "global settings pin the opus alias to Opus 5.5"     "$gs" '"ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-5-5"'
+# FORCE would make Claude Code ignore the verifier's per-invocation model.
+not_contains "global settings do not force one subagent model" "$gs" "CLAUDE_CODE_SUBAGENT_MODEL_FORCE"
 contains "global settings set an effort default"      "$gs" '"effortLevel"'
 contains "global settings configure the status line"  "$gs" '"statusLine"'
 check "global settings are valid JSON" \

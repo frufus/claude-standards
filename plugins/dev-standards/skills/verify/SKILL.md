@@ -20,8 +20,9 @@ not the conversation, not `tasks.md`. Fresh context is the whole mechanism.
 2. **Dispatch the verifier** with the Agent tool (`general-purpose`,
    `model: sonnet` — the per-invocation model outranks
    `CLAUDE_CODE_SUBAGENT_MODEL`, so the verifier is not downgraded to
-   the exploration default), using the brief below verbatim with the
-   placeholders filled. Give it nothing else.
+   the exploration default, and the global settings pin `sonnet` to
+   Claude Sonnet 5.5 on every provider, ADR-0005), using the brief below
+   verbatim with the placeholders filled. Give it nothing else.
 3. **Read `openspec/changes/<id>/verification.md`** when it returns.
 4. **Answer every finding.** Each `fail` and `not verifiable` is a review
    finding: fix it, or reject it with a stated reason. Write the answer

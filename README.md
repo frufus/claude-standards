@@ -84,8 +84,15 @@ cp plugins/dev-standards/templates/global/statusline.js  ~/.claude/statusline.js
 The settings default sub-agents to haiku, effort to `medium`, and put the
 context window in the status line; the reasoning is
 [ADR-0004](docs/adr/0004-token-rules-live-in-the-always-loaded-layer.md).
-On Windows, write the absolute path of `statusline.js` into the
-`statusLine.command` entry. How to check whether any of it moves the
+They also pin the `haiku`, `sonnet` and `opus` aliases to the current
+generation — Claude Haiku 5.5, Sonnet 5.5 and Opus 5.5 — because outside
+the Anthropic API those aliases still resolve to 4.5 or 4.6
+([ADR-0005](docs/adr/0005-subagent-models-are-pinned-to-the-current-generation.md)).
+So a sub-agent without its own model runs on Haiku 5.5 and the `verify`
+skill's verifier on Sonnet 5.5, whichever provider the session uses. On
+Amazon Bedrock or Microsoft Foundry, replace the three IDs with that
+provider's IDs for the same models. On Windows, write the absolute path
+of `statusline.js` into the `statusLine.command` entry. How to check whether any of it moves the
 bill is in [`docs/token-measurement.md`](docs/token-measurement.md).
 
 Releases are tagged; the current release is `v0.4.0`. Claude Code has no
@@ -267,7 +274,7 @@ plugins/dev-standards/             The plugin
     web/  python/                  Per-profile AGENTS.md, CLAUDE.md, claude-settings.json, config fragment and scripts/
     adr/TEMPLATE.md
 tests/                             Bash harness, one file per subject
-docs/adr/                          This repository's own decisions — four so far
+docs/adr/                          This repository's own decisions — five so far
 docs/token-measurement.md          How to tell whether any of this moves the bill
 ```
 
@@ -283,7 +290,7 @@ prescribes.
 bash tests/run-tests.sh
 ```
 
-549 checks over the manifests, the helper libraries, all six hooks,
+556 checks over the manifests, the helper libraries, all six hooks,
 all five skills, the script templates — read, and the web `verify` run
 against stub executables — and every other template. The suite asserts the
 *content* of the skills and templates, not merely that the files exist — so a
