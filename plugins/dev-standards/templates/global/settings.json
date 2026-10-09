@@ -5,7 +5,12 @@
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-5-5",
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-5-5"
   },
-  "effortLevel": "medium",
+  "effortLevel": "high",
+  "modelSettings": {
+    "claude-haiku-5-5": { "effortLevel": "high" },
+    "claude-sonnet-5-5": { "effortLevel": "high" },
+    "claude-opus-5-5": { "effortLevel": "high" }
+  },
   "statusLine": {
     "type": "command",
     "command": "node \"$HOME/.claude/statusline.js\""

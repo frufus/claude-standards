@@ -1,6 +1,6 @@
 # ADR-0004: Token rules live in the always-loaded layer
 
-Status: accepted; decision 4 amended by ADR-0005 (subagent models pinned to the current generation) · Date: 2026-09-11 · Affects: `templates/global/CLAUDE.md` and its 60-line budget (spec 2026-09-06 §4.2), `templates/global/settings.json`, `hooks/filter-test-output.sh`, `skills/new-project/SKILL.md` steps 8–9
+Status: accepted; decision 4 amended by ADR-0005 (subagent models pinned to the current generation) and ADR-0006 (effort starts at high, replacing `medium`) · Date: 2026-09-11 · Affects: `templates/global/CLAUDE.md` and its 60-line budget (spec 2026-09-06 §4.2), `templates/global/settings.json`, `hooks/filter-test-output.sh`, `skills/new-project/SKILL.md` steps 8–9
 
 ## Context
 

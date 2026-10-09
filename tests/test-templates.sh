@@ -55,6 +55,28 @@ contains "global settings pin the opus alias to Opus 5.5"     "$gs" '"ANTHROPIC_
 # FORCE would make Claude Code ignore the verifier's per-invocation model.
 not_contains "global settings do not force one subagent model" "$gs" "CLAUDE_CODE_SUBAGENT_MODEL_FORCE"
 contains "global settings set an effort default"      "$gs" '"effortLevel"'
+
+# Effort starts at high (ADR-0006). The user-file top-level key does not
+# reach Opus 5.5 and later, so each pinned model carries its own entry,
+# keyed by the same IDs ADR-0005 pins; no level below high appears.
+effort=$(node -e '
+  const j = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+  const env = j.env || {}, ms = j.modelSettings || {};
+  const pinned = ["HAIKU", "SONNET", "OPUS"].map((t) => env["ANTHROPIC_DEFAULT_" + t + "_MODEL"]);
+  const ok = j.effortLevel === "high"
+    && pinned.every((id) => id && ms[id] && ms[id].effortLevel === "high")
+    && Object.keys(ms).every((id) => pinned.includes(id));
+  console.log(ok ? "ok" : "bad");
+' "$T/global/settings.json" 2>/dev/null)
+check "global settings start every pinned model at high effort" "$effort" "ok"
+not_contains "global settings set no effort below high (low)"    "$gs" '"low"'
+not_contains "global settings set no effort below high (medium)" "$gs" '"medium"'
+not_contains "global settings do not fix the effort level"       "$gs" "CLAUDE_CODE_EFFORT_LEVEL"
+not_contains "global settings do not cap effort"                 "$gs" "maxEffortLevel"
+for p in web python; do
+    check "$p project settings start every model at high effort" \
+      "$(node -p 'JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).effortLevel' "$T/$p/claude-settings.json" 2>/dev/null)" "high"
+done
 contains "global settings configure the status line"  "$gs" '"statusLine"'
 check "global settings are valid JSON" \
   "$(node -e 'JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));console.log("ok")' "$T/global/settings.json" 2>/dev/null)" "ok"

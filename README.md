@@ -81,9 +81,14 @@ cp plugins/dev-standards/templates/global/statusline.js  ~/.claude/statusline.js
 # merge plugins/dev-standards/templates/global/settings.json into ~/.claude/settings.json
 ```
 
-The settings default sub-agents to haiku, effort to `medium`, and put the
-context window in the status line; the reasoning is
+The settings default sub-agents to haiku and put the context window in
+the status line; the reasoning is
 [ADR-0004](docs/adr/0004-token-rules-live-in-the-always-loaded-layer.md).
+Effort starts at `high` everywhere the standard decides it — the global
+settings, each project's settings, and the `verify` skill's verifier —
+and `xhigh` or `max` stay available per session
+([ADR-0006](docs/adr/0006-effort-starts-at-high.md)). Claude Code has no
+minimum-effort setting, so `high` is the default, not a lock.
 They also pin the `haiku`, `sonnet` and `opus` aliases to the current
 generation — Claude Haiku 5.5, Sonnet 5.5 and Opus 5.5 — because outside
 the Anthropic API those aliases still resolve to 4.5 or 4.6
@@ -274,7 +279,7 @@ plugins/dev-standards/             The plugin
     web/  python/                  Per-profile AGENTS.md, CLAUDE.md, claude-settings.json, config fragment and scripts/
     adr/TEMPLATE.md
 tests/                             Bash harness, one file per subject
-docs/adr/                          This repository's own decisions — five so far
+docs/adr/                          This repository's own decisions — six so far
 docs/token-measurement.md          How to tell whether any of this moves the bill
 ```
 
@@ -290,7 +295,7 @@ prescribes.
 bash tests/run-tests.sh
 ```
 
-556 checks over the manifests, the helper libraries, all six hooks,
+566 checks over the manifests, the helper libraries, all six hooks,
 all five skills, the script templates — read, and the web `verify` run
 against stub executables — and every other template. The suite asserts the
 *content* of the skills and templates, not merely that the files exist — so a

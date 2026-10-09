@@ -1,7 +1,11 @@
 {
+  "effortLevel": "high",
   "extraKnownMarketplaces": {
     "claude-standards": {
-      "source": { "source": "github", "repo": "frufus/claude-standards" }
+      "source": {
+        "source": "github",
+        "repo": "frufus/claude-standards"
+      }
     }
   },
   "enabledPlugins": {
